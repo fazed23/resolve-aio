@@ -883,7 +883,7 @@ def _process_builtin_command(bridge, text: str) -> str | None:
             return "Specify a transition: install transition \"Whip Slide\""
 
         if "install" in lower and "preset" in lower:
-            counts = install_bundled_assets()
+            counts = install_bundled_assets(strict=True)
             total = sum(counts.values())
             parts = ", ".join(f"{key}={value}" for key, value in sorted(counts.items()))
             return f"Installed {total} bundled assets.\n{parts}"

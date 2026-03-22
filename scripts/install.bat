@@ -5,6 +5,7 @@ setlocal enabledelayedexpansion
 set "SCRIPT_DIR=%~dp0"
 set "PROJECT_DIR=%SCRIPT_DIR%.."
 set "VENV_DIR=%PROJECT_DIR%\.venv"
+set "VENV_PYTHON=%VENV_DIR%\Scripts\python.exe"
 
 echo ========================================
 echo        ResolveAIO — Installer
@@ -31,6 +32,7 @@ if not exist "%VENV_DIR%" (
     %PYTHON% -m venv "%VENV_DIR%"
 )
 call "%VENV_DIR%\Scripts\activate.bat"
+cd /d "%PROJECT_DIR%"
 echo Virtual environment active
 
 REM --- Install dependencies ---
@@ -52,12 +54,13 @@ if exist "%RESOLVE_SCRIPT_API%" (
 
 REM --- Install bundled assets ---
 echo Installing bundled Resolve assets...
-python -m src.automation.preset_manager install-bundled
+"%VENV_PYTHON%" -m src.automation.preset_manager install-bundled --strict
 if errorlevel 1 (
-    echo WARNING: bundled asset install reported an error
-) else (
-    echo Bundled assets processed
+    echo ERROR: bundled asset install failed.
+    echo If Resolve uses a custom LUT folder, set RESOLVE_LUT_DIR before running the installer.
+    exit /b 1
 )
+echo Bundled assets installed
 
 echo.
 echo ========================================

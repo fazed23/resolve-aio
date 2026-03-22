@@ -107,6 +107,7 @@ if not exist "%VENV_DIR%" (
 )
 
 call "%VENV_DIR%\Scripts\activate.bat"
+cd /d "%PROJECT_DIR%"
 echo   [OK] Virtual environment ready
 
 echo   Installing packages... (this may take a minute)
@@ -119,32 +120,19 @@ if !errorlevel! neq 0 (
 )
 echo   [OK] All packages installed
 
-REM ── Step 3: Install DCTLs ─────────────────────────────────
+REM ── Step 3: Install Resolve assets ────────────────────────
 
 echo.
-echo   [3/%TOTAL_STEPS%] Installing DCTL color tools...
+echo   [3/%TOTAL_STEPS%] Installing LUTs, DCTLs, and Fusion templates...
 echo   ────────────────────────────────────────
 
-set "LUT_DIR=%PROGRAMDATA%\Blackmagic Design\DaVinci Resolve\Support\LUT"
-set "DCTL_SRC=%PROJECT_DIR%\src\dctl"
-set "DCTL_DEST=%LUT_DIR%\ResolveAIO"
-set DCTL_COUNT=0
-
-if exist "%LUT_DIR%" (
-    for /d %%d in ("%DCTL_SRC%\*") do (
-        set "CAT=%%~nxd"
-        if not exist "%DCTL_DEST%\!CAT!" mkdir "%DCTL_DEST%\!CAT!"
-        for %%f in ("%%d\*.dctl") do (
-            copy "%%f" "%DCTL_DEST%\!CAT!\" >nul 2>&1
-            set /a DCTL_COUNT+=1
-        )
-    )
-    echo   [OK] Installed !DCTL_COUNT! DCTL tools
-    echo        Location: %DCTL_DEST%
-) else (
-    echo   [!] LUT directory not found — make sure Resolve is installed
-    echo       You can install DCTLs manually later
+"%VENV_DIR%\Scripts\python.exe" -m src.automation.preset_manager install-bundled --strict
+if errorlevel 1 (
+    echo   [!] Resolve asset install failed
+    echo       If Resolve uses a custom LUT folder, set RESOLVE_LUT_DIR and run again
+    exit /b 1
 )
+echo   [OK] All Resolve assets installed
 
 REM ── Step 4: Configure MCP ──────────────────────────────────
 

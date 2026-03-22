@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import platform
+import shlex
 import subprocess
 import sys
 import threading
@@ -329,27 +330,72 @@ class InstallerApp:
         else:
             venv_python = str(VENV_DIR / "bin" / "python")
 
-        result = subprocess.run(
-            [venv_python, "-m", "src.automation.preset_manager", "install-bundled"],
+        lut_dir_result = subprocess.run(
+            [venv_python, "-m", "src.automation.preset_manager", "print-lut-dir"],
             capture_output=True,
             text=True,
             cwd=str(PROJECT_DIR),
         )
+        lut_dir = (lut_dir_result.stdout or "").strip()
+        if lut_dir:
+            self.log(f"  LUT target: {lut_dir}")
+
+        if IS_MAC and lut_dir.startswith("/Library/"):
+            self.log("  Administrator access is required for LUT and DCTL files...")
+            result = self._run_mac_admin_bundle_install(venv_python, ["LUT", "DCTL"])
+            self._log_bundle_result(result)
+            if result.returncode != 0:
+                self.root.after(0, lambda: self.set_step(2, "error"))
+                self.root.after(0, lambda: self.set_step_detail(2, "Admin install failed"))
+                raise RuntimeError("Bundled asset install failed")
+
+            result = self._run_bundle_install(venv_python, ["FusionTemplate"])
+        else:
+            result = self._run_bundle_install(venv_python)
+
+        self._log_bundle_result(result)
+
+        if result.returncode != 0:
+            self.root.after(0, lambda: self.set_step(2, "error"))
+            self.root.after(0, lambda: self.set_step_detail(2, "Asset install failed"))
+            raise RuntimeError("Bundled asset install failed")
+
+        self.root.after(0, lambda: self.set_step(2, "done"))
+        self.root.after(0, lambda: self.set_step_detail(2, "Assets installed"))
+
+    def _run_bundle_install(self, venv_python: str, asset_types: list[str] | None = None):
+        command = [venv_python, "-m", "src.automation.preset_manager", "install-bundled", "--strict"]
+        for asset_type in asset_types or []:
+            command.extend(["--asset-type", asset_type])
+        return subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            cwd=str(PROJECT_DIR),
+        )
+
+    def _run_mac_admin_bundle_install(self, venv_python: str, asset_types: list[str]):
+        command = [venv_python, "-m", "src.automation.preset_manager", "install-bundled", "--strict"]
+        for asset_type in asset_types:
+            command.extend(["--asset-type", asset_type])
+        shell_command = f"cd {shlex.quote(str(PROJECT_DIR))} && {shlex.join(command)}"
+        apple_script = f"do shell script {json.dumps(shell_command)} with administrator privileges"
+        return subprocess.run(
+            ["osascript", "-e", apple_script],
+            capture_output=True,
+            text=True,
+            cwd=str(PROJECT_DIR),
+        )
+
+    def _log_bundle_result(self, result) -> None:
         output = (result.stdout or "").strip()
         if output:
             for line in output.splitlines():
                 self.log(f"  {line}")
-
-        if result.returncode != 0:
-            self.log("  Bundled asset install reported an error")
-            if result.stderr:
-                self.log(f"  {result.stderr.strip()}")
-            self.root.after(0, lambda: self.set_step(2, "warning"))
-            self.root.after(0, lambda: self.set_step_detail(2, "Install warning"))
-            return
-
-        self.root.after(0, lambda: self.set_step(2, "done"))
-        self.root.after(0, lambda: self.set_step_detail(2, "Assets installed"))
+        error = (result.stderr or "").strip()
+        if error:
+            for line in error.splitlines():
+                self.log(f"  {line}")
 
     def _step_configure_mcp(self):
         self.root.after(0, lambda: self.set_step(3, "running"))
@@ -509,9 +555,28 @@ class InstallerApp:
         else:
             self.log("  Module check: may need Resolve running")
 
-        dctl_dest = LUT_DIR / "ResolveAIO"
-        dctl_count = len(list(dctl_dest.rglob("*.dctl"))) if dctl_dest.exists() else 0
-        self.log(f"  DCTL files installed: {dctl_count}")
+        asset_result = subprocess.run(
+            [
+                venv_python,
+                "-c",
+                (
+                    "from src.automation.preset_manager import list_installed_presets; "
+                    "presets=list_installed_presets(); "
+                    "dctls=sum(1 for p in presets if p['type']=='DCTL'); "
+                    "luts=sum(1 for p in presets if p['type']=='LUT'); "
+                    "templates=sum(1 for p in presets if p['type']=='FusionTemplate'); "
+                    "print(f'{dctls}|{luts}|{templates}')"
+                ),
+            ],
+            capture_output=True,
+            text=True,
+            cwd=str(PROJECT_DIR),
+        )
+        counts = (asset_result.stdout or "").strip().split("|")
+        if len(counts) == 3:
+            self.log(f"  DCTL files installed: {counts[0]}")
+            self.log(f"  LUT files installed: {counts[1]}")
+            self.log(f"  Fusion templates installed: {counts[2]}")
 
         self.root.after(0, lambda: self.set_step(5, "done"))
         self.root.after(0, lambda: self.set_step_detail(5, "All good"))
@@ -523,7 +588,7 @@ class InstallerApp:
         self.log("\nWhat now?")
         self.log("  1. Double-click 'ResolveAIO - Chat' on Desktop")
         self.log("  2. Or double-click 'ResolveAIO - Start Server' for Cursor")
-        self.log("  3. Or open Resolve > Color > DCTL effects")
+        self.log("  3. Restart Resolve, then open Color > DCTL or Edit > Titles")
         self.log(f"  4. To enable GPT, edit: {ENV_FILE}")
         self.log("\nMake sure DaVinci Resolve is running first!")
 
@@ -542,7 +607,8 @@ class InstallerApp:
             "You'll find two shortcuts on your Desktop:\n\n"
             "• ResolveAIO - Chat — opens a chat in your browser\n"
             "• ResolveAIO - Start Server — for use with Cursor\n\n"
-            "Make sure DaVinci Resolve is running before starting!",
+            "Restart DaVinci Resolve so LUTs and templates refresh,\n"
+            "then make sure it is running before starting!",
         ))
 
     def run(self):

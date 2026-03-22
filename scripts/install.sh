@@ -5,6 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 VENV_DIR="$PROJECT_DIR/.venv"
+VENV_PYTHON="$VENV_DIR/bin/python"
 
 echo "╔══════════════════════════════════════╗"
 echo "║       ResolveAIO — Installer         ║"
@@ -34,6 +35,7 @@ if [ ! -d "$VENV_DIR" ]; then
     $PYTHON -m venv "$VENV_DIR"
 fi
 source "$VENV_DIR/bin/activate"
+cd "$PROJECT_DIR"
 echo "✓ Virtual environment active"
 
 # --- Install dependencies ---
@@ -65,14 +67,16 @@ fi
 
 # --- Install bundled assets ---
 echo "→ Installing bundled Resolve assets..."
-ASSET_OUTPUT=$(python -m src.automation.preset_manager install-bundled 2>&1) || {
-    echo "$ASSET_OUTPUT"
-    echo "⚠ Bundled asset install reported an error"
-}
-if [ -n "${ASSET_OUTPUT:-}" ]; then
-    echo "$ASSET_OUTPUT"
+LUT_TARGET="$($VENV_PYTHON -m src.automation.preset_manager print-lut-dir)"
+echo "  LUT target: $LUT_TARGET"
+if [[ "$LUT_TARGET" == /Library/* || "$LUT_TARGET" == /opt/* ]]; then
+    echo "  Administrator access is required for LUT and DCTL files."
+    sudo "$VENV_PYTHON" -m src.automation.preset_manager install-bundled --strict --asset-type LUT --asset-type DCTL
+    "$VENV_PYTHON" -m src.automation.preset_manager install-bundled --strict --asset-type FusionTemplate
+else
+    "$VENV_PYTHON" -m src.automation.preset_manager install-bundled --strict
 fi
-echo "✓ Bundled assets processed"
+echo "✓ Bundled assets installed"
 
 # --- Configure Cursor MCP ---
 CURSOR_CONFIG="$HOME/.cursor/mcp.json"

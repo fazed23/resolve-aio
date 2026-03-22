@@ -14,6 +14,7 @@ import platform
 import re
 import shutil
 from pathlib import Path
+from typing import Iterable
 
 logger = logging.getLogger("resolve_aio.preset_manager")
 
@@ -42,6 +43,29 @@ TEMPLATE_DIRS = {
     "Windows": Path(os.environ.get("APPDATA", str(Path.home() / "AppData" / "Roaming"))) / "Blackmagic Design" / "DaVinci Resolve" / "Support" / "Fusion" / "Templates" / "Edit",
     "Linux": Path.home() / ".local" / "share" / "DaVinciResolve" / "Fusion" / "Templates" / "Edit",
 }
+
+MAC_APPSTORE_LUT_DIRS = (
+    Path.home()
+    / "Library"
+    / "Containers"
+    / "com.blackmagic-design.DaVinciResolveAppStore"
+    / "Data"
+    / "Library"
+    / "Application Support"
+    / "Blackmagic Design"
+    / "DaVinci Resolve"
+    / "LUT",
+    Path.home()
+    / "Library"
+    / "Containers"
+    / "com.blackmagic-design.DaVinciResolveLiteAppStore"
+    / "Data"
+    / "Library"
+    / "Application Support"
+    / "Blackmagic Design"
+    / "DaVinci Resolve"
+    / "LUT",
+)
 
 METADATA: dict[str, dict[str, str]] = {
     "Kodak2383Print.cube": {
@@ -175,13 +199,59 @@ METADATA: dict[str, dict[str, str]] = {
 }
 
 
-def get_lut_dir() -> Path:
-    """Get the Resolve LUT directory for the current platform."""
+def _dedupe_paths(paths: Iterable[Path]) -> list[Path]:
+    unique: list[Path] = []
+    seen: set[str] = set()
+    for path in paths:
+        resolved = str(path.expanduser())
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        unique.append(Path(resolved))
+    return unique
+
+
+def get_lut_dir_candidates() -> list[Path]:
+    """Return candidate LUT directories in preference order."""
     system = platform.system()
-    path = LUT_DIRS.get(system)
-    if not path:
+    default_path = LUT_DIRS.get(system)
+    if not default_path:
         raise RuntimeError(f"Unsupported platform: {system}")
-    return Path(path)
+
+    env_override = os.environ.get("RESOLVE_LUT_DIR", "").strip()
+    candidates: list[Path] = []
+    if env_override:
+        candidates.append(Path(env_override).expanduser())
+
+    if system == "Darwin":
+        candidates.extend(
+            [
+                Path(default_path),
+                Path.home() / "Library" / "Application Support" / "Blackmagic Design" / "DaVinci Resolve" / "LUT",
+                Path.home() / "Library" / "Application Support" / "Blackmagic Design" / "DaVinci Resolve" / "Support" / "LUT",
+                *MAC_APPSTORE_LUT_DIRS,
+            ]
+        )
+    elif system == "Linux":
+        candidates.extend(
+            [
+                Path(default_path),
+                Path.home() / ".local" / "share" / "DaVinciResolve" / "LUT",
+            ]
+        )
+    else:
+        candidates.append(Path(default_path))
+
+    return _dedupe_paths(candidates)
+
+
+def get_lut_dir() -> Path:
+    """Get the preferred Resolve LUT directory for the current platform."""
+    candidates = get_lut_dir_candidates()
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
 
 
 def get_fusion_template_dir(category: str = "Titles") -> Path:
@@ -191,6 +261,11 @@ def get_fusion_template_dir(category: str = "Titles") -> Path:
     if not base:
         raise RuntimeError(f"Unsupported platform: {system}")
     return base / category
+
+
+def get_existing_lut_dirs() -> list[Path]:
+    """Return all existing Resolve LUT directories that can be scanned."""
+    return [path for path in get_lut_dir_candidates() if path.exists()]
 
 
 def get_bundled_presets_dir() -> Path:
@@ -281,9 +356,10 @@ def find_bundled_asset(name: str, asset_type: str | None = None) -> dict[str, st
 
 def list_installed_presets(preset_type: str | None = None) -> list[dict[str, str]]:
     presets = []
-    lut_dir = get_lut_dir()
+    seen_paths: set[str] = set()
+    lut_dirs = get_existing_lut_dirs()
 
-    if lut_dir.exists():
+    for lut_dir in lut_dirs:
         for root, _, files in os.walk(lut_dir):
             for f in files:
                 ext = Path(f).suffix.lower()
@@ -293,14 +369,19 @@ def list_installed_presets(preset_type: str | None = None) -> list[dict[str, str
                     ptype = TYPE_MAP[ext]
                     if preset_type and ptype.lower() != preset_type.lower():
                         continue
+                    preset_path = str(Path(root) / f)
+                    if preset_path in seen_paths:
+                        continue
+                    seen_paths.add(preset_path)
                     presets.append({
                         "name": f,
                         "type": ptype,
-                        "path": str(Path(root) / f),
+                        "path": preset_path,
                         "relative": str(Path(root).relative_to(lut_dir) / f),
                     })
-    else:
-        logger.warning("LUT directory does not exist: %s", lut_dir)
+
+    if not lut_dirs:
+        logger.warning("No Resolve LUT directory found. Checked: %s", ", ".join(str(p) for p in get_lut_dir_candidates()))
 
     try:
         template_root = get_fusion_template_dir().parent
@@ -311,10 +392,14 @@ def list_installed_presets(preset_type: str | None = None) -> list[dict[str, str
         for template in template_root.rglob("*.setting"):
             if preset_type and "fusiontemplate" != preset_type.lower():
                 continue
+            template_path = str(template)
+            if template_path in seen_paths:
+                continue
+            seen_paths.add(template_path)
             presets.append({
                 "name": template.name,
                 "type": "FusionTemplate",
-                "path": str(template),
+                "path": template_path,
                 "relative": str(template.relative_to(template_root)),
             })
 
@@ -344,18 +429,43 @@ def install_preset(source: str, category: str = "") -> str:
         target_dir = lut_dir / "ResolveAIO"
         if category:
             target_dir = target_dir / category
-    target_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        target_dir.mkdir(parents=True, exist_ok=True)
+    except PermissionError as exc:
+        raise PermissionError(
+            f"Cannot write to Resolve LUT directory '{target_dir}'. "
+            "Re-run the installer with administrator privileges or set RESOLVE_LUT_DIR "
+            "to a writable LUT folder configured in Resolve."
+        ) from exc
 
     dest = target_dir / src.name
-    shutil.copy2(str(src), str(dest))
+    try:
+        shutil.copy2(str(src), str(dest))
+    except PermissionError as exc:
+        raise PermissionError(
+            f"Cannot copy '{src.name}' to '{dest}'. "
+            "Re-run the installer with administrator privileges or set RESOLVE_LUT_DIR "
+            "to a writable LUT folder configured in Resolve."
+        ) from exc
     logger.info("Installed %s → %s", src.name, dest)
     return str(dest)
 
 
-def install_bundled_assets(asset_type: str | None = None) -> dict[str, int]:
+def install_bundled_assets(
+    asset_type: str | None = None,
+    asset_types: list[str] | None = None,
+    strict: bool = False,
+) -> dict[str, int]:
     """Install bundled ResolveAIO assets and return counts by type."""
     counts: dict[str, int] = {}
-    for asset in list_bundled_assets(asset_type=asset_type):
+    selected = {item.lower() for item in (asset_types or [])}
+    if asset_type:
+        selected.add(asset_type.lower())
+    failures: list[tuple[str, Exception]] = []
+
+    for asset in list_bundled_assets():
+        if selected and asset["type"].lower() not in selected:
+            continue
         if asset["type"] == "PowerGrade":
             logger.info(
                 "Skipping %s during install; PowerGrades are applied or imported through Resolve, not copied into LUT folders.",
@@ -367,8 +477,15 @@ def install_bundled_assets(asset_type: str | None = None) -> dict[str, int]:
             install_preset(asset["path"], category=category)
         except Exception as exc:
             logger.error("Failed to install %s: %s", asset["file_name"], exc)
+            failures.append((asset["file_name"], exc))
             continue
         counts[asset["type"]] = counts.get(asset["type"], 0) + 1
+
+    if strict and failures:
+        summary = "; ".join(f"{name}: {exc}" for name, exc in failures[:5])
+        if len(failures) > 5:
+            summary += f"; … {len(failures) - 5} more"
+        raise RuntimeError(f"Failed to install {len(failures)} asset(s): {summary}")
     return counts
 
 
@@ -400,11 +517,24 @@ def main() -> None:
 
     sub.add_parser("list", help="List installed presets")
     sub.add_parser("list-bundled", help="List bundled assets that ship with ResolveAIO")
+    sub.add_parser("print-lut-dir", help="Print the preferred Resolve LUT directory")
     inst = sub.add_parser("install", help="Install a preset file")
     inst.add_argument("file", help="Path to the preset file")
     inst.add_argument("--category", default="", help="Category subdirectory")
 
-    sub.add_parser("install-bundled", help="Install bundled LUTs, DCTLs, and Fusion templates")
+    install_all = sub.add_parser("install-bundled", help="Install bundled LUTs, DCTLs, and Fusion templates")
+    install_all.add_argument(
+        "--asset-type",
+        action="append",
+        choices=["DCTL", "LUT", "FusionTemplate", "PowerGrade"],
+        dest="asset_types",
+        help="Limit install to one or more asset types",
+    )
+    install_all.add_argument(
+        "--strict",
+        action="store_true",
+        help="Exit with an error if any bundled asset fails to install",
+    )
 
     rm = sub.add_parser("uninstall", help="Remove an installed preset")
     rm.add_argument("name", help="Filename to remove")
@@ -422,11 +552,13 @@ def main() -> None:
         for asset in assets:
             print(f"  [{asset['type']}] {asset['name']} — {asset['relative']}")
         print(f"\nTotal: {len(assets)} bundled assets")
+    elif args.command == "print-lut-dir":
+        print(get_lut_dir())
     elif args.command == "install":
         dest = install_preset(args.file, args.category)
         print(f"Installed to: {dest}")
     elif args.command == "install-bundled":
-        counts = install_bundled_assets()
+        counts = install_bundled_assets(asset_types=args.asset_types, strict=args.strict)
         total = sum(counts.values())
         if counts:
             summary = ", ".join(f"{k}={v}" for k, v in sorted(counts.items()))

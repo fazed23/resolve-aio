@@ -38,6 +38,8 @@ The installer will:
 3. Install bundled Resolve assets: DCTLs, LUTs, and Fusion templates
 4. Configure Cursor MCP integration
 
+On macOS and Linux, LUT/DCTL installation may require an administrator password because Resolve stores LUTs in a system folder by default. If you use a custom LUT folder in Resolve, set `RESOLVE_LUT_DIR` before running the installer.
+
 ### Run
 
 ```bash
@@ -109,7 +111,7 @@ python -m src.automation.auto_grade color-tag --short-sec 5 --long-sec 30
 python -m src.automation.silence_remover --action mark
 
 # Install bundled presets
-python -m src.automation.preset_manager install-bundled
+python -m src.automation.preset_manager install-bundled --strict
 
 # List installed presets
 python -m src.automation.preset_manager list

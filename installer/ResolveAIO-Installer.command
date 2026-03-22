@@ -121,46 +121,31 @@ else
 fi
 
 source "$VENV_DIR/bin/activate"
+cd "$PROJECT_DIR"
 
 echo -e "  ${DIM}מתקין חבילות... (זה יכול לקחת דקה)${NC}"
 pip install --upgrade pip -q 2>/dev/null
 pip install -r "$PROJECT_DIR/requirements.txt" -q 2>/dev/null || fail "התקנת חבילות נכשלה"
 success "כל החבילות הותקנו"
 
-# ── Step 3: Detect Resolve & Install DCTLs ──────────────────
+# ── Step 3: Install Resolve Assets ──────────────────────────
 
-progress "מתקין כלי צבע (DCTL) ל-DaVinci Resolve..."
+progress "מתקין LUTs, DCTLs ותבניות Fusion ל-DaVinci Resolve..."
 
-LUT_DIR="/Library/Application Support/Blackmagic Design/DaVinci Resolve/LUT"
-DCTL_SRC="$PROJECT_DIR/src/dctl"
-DCTL_DEST="$LUT_DIR/ResolveAIO"
+LUT_DIR="$("$VENV_DIR/bin/python" -m src.automation.preset_manager print-lut-dir)"
+echo -e "  ${DIM}LUT target: $LUT_DIR${NC}"
 
-if [ -d "$LUT_DIR" ]; then
-    # May need sudo for /Library path
-    if [ -w "$LUT_DIR" ]; then
-        SUDO=""
-    else
-        echo -e "  ${YELLOW}נדרשת הרשאת מנהל להתקנת DCTL (הכנס סיסמה)${NC}"
-        SUDO="sudo"
-    fi
-
-    DCTL_COUNT=0
-    for category_dir in "$DCTL_SRC"/*/; do
-        [ -d "$category_dir" ] || continue
-        cat_name=$(basename "$category_dir")
-        $SUDO mkdir -p "$DCTL_DEST/$cat_name" 2>/dev/null
-        for dctl_file in "$category_dir"*.dctl; do
-            [ -f "$dctl_file" ] || continue
-            $SUDO cp "$dctl_file" "$DCTL_DEST/$cat_name/" 2>/dev/null
-            DCTL_COUNT=$((DCTL_COUNT + 1))
-        done
-    done
-    success "הותקנו $DCTL_COUNT כלי DCTL"
-    echo -e "  ${DIM}מיקום: $DCTL_DEST${NC}"
+if [[ "$LUT_DIR" == /Library/* || "$LUT_DIR" == /opt/* ]]; then
+    echo -e "  ${YELLOW}נדרשת הרשאת מנהל להתקנת LUT/DCTL (הכנס סיסמה)${NC}"
+    sudo "$VENV_DIR/bin/python" -m src.automation.preset_manager install-bundled --strict --asset-type LUT --asset-type DCTL \
+        || fail "התקנת LUT/DCTL נכשלה"
+    "$VENV_DIR/bin/python" -m src.automation.preset_manager install-bundled --strict --asset-type FusionTemplate \
+        || fail "התקנת Fusion templates נכשלה"
 else
-    warning "תיקיית LUT לא נמצאה — וודא ש-Resolve מותקן"
-    warning "תוכל להתקין DCTLs ידנית אחר כך"
+    "$VENV_DIR/bin/python" -m src.automation.preset_manager install-bundled --strict \
+        || fail "התקנת Resolve assets נכשלה"
 fi
+success "כל ה-assets הותקנו"
 
 # ── Step 4: Detect Resolve Script API ───────────────────────
 
