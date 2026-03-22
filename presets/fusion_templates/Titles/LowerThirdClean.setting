@@ -1,0 +1,120 @@
+{
+    Tools = ordered() {
+        LowerThirdClean = MacroOperator {
+            Inputs = ordered() {
+                MainInput1 = InstanceInput {
+                    SourceOp = "NameText",
+                    Source = "StyledText",
+                    Name = "Name",
+                    Default = "John Smith",
+                },
+                MainInput2 = InstanceInput {
+                    SourceOp = "TitleText",
+                    Source = "StyledText",
+                    Name = "Title",
+                    Default = "Director of Photography",
+                },
+                MainInput3 = InstanceInput {
+                    SourceOp = "BarBG",
+                    Source = "TopLeftRed",
+                    Name = "Bar Color R",
+                    Default = 0.91,
+                },
+                MainInput4 = InstanceInput {
+                    SourceOp = "BarBG",
+                    Source = "TopLeftGreen",
+                    Name = "Bar Color G",
+                    Default = 0.27,
+                },
+                MainInput5 = InstanceInput {
+                    SourceOp = "BarBG",
+                    Source = "TopLeftBlue",
+                    Name = "Bar Color B",
+                    Default = 0.37,
+                },
+            },
+            Outputs = {
+                MainOutput1 = InstanceOutput {
+                    SourceOp = "FinalMerge",
+                    Source = "Output",
+                },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                EmptyBG = Background {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        ["TopLeftAlpha"] = Input { Value = 0 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+                },
+                BarBG = Background {
+                    Inputs = {
+                        Width = Input { Value = 400 },
+                        Height = Input { Value = 4 },
+                        TopLeftRed = Input { Value = 0.91 },
+                        TopLeftGreen = Input { Value = 0.27 },
+                        TopLeftBlue = Input { Value = 0.37 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 0, 100 } },
+                },
+                NameText = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        StyledText = Input { Value = "John Smith" },
+                        Font = Input { Value = "Open Sans" },
+                        Style = Input { Value = "Bold" },
+                        Size = Input { Value = 0.045 },
+                        Center = Input { Value = { 0.15, 0.18 } },
+                        Red1 = Input { Value = 1 },
+                        Green1 = Input { Value = 1 },
+                        Blue1 = Input { Value = 1 },
+                        HorizontalJustificationNew = Input { Value = 0 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 0 } },
+                },
+                TitleText = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        StyledText = Input { Value = "Director of Photography" },
+                        Font = Input { Value = "Open Sans" },
+                        Style = Input { Value = "Regular" },
+                        Size = Input { Value = 0.03 },
+                        Center = Input { Value = { 0.15, 0.13 } },
+                        Red1 = Input { Value = 0.7 },
+                        Green1 = Input { Value = 0.7 },
+                        Blue1 = Input { Value = 0.7 },
+                        HorizontalJustificationNew = Input { Value = 0 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 100 } },
+                },
+                MergeName = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "EmptyBG", Source = "Output" },
+                        Foreground = Input { SourceOp = "NameText", Source = "Output" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 440, 0 } },
+                },
+                MergeTitle = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "MergeName", Source = "Output" },
+                        Foreground = Input { SourceOp = "TitleText", Source = "Output" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 660, 0 } },
+                },
+                FinalMerge = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "MergeTitle", Source = "Output" },
+                        Foreground = Input { SourceOp = "BarBG", Source = "Output" },
+                        Center = Input { Value = { 0.15, 0.155 } },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 880, 0 } },
+                },
+            },
+        },
+    },
+    ActiveTool = "LowerThirdClean",
+}

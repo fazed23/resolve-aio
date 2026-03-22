@@ -1,0 +1,90 @@
+{
+    Tools = ordered() {
+        CaptionPop = MacroOperator {
+            Inputs = ordered() {
+                MainInput1 = InstanceInput {
+                    SourceOp = "CaptionText",
+                    Source = "StyledText",
+                    Name = "Caption",
+                    Default = "This line matters",
+                },
+                MainInput2 = InstanceInput {
+                    SourceOp = "CaptionText",
+                    Source = "Size",
+                    Name = "Font Size",
+                    Default = 0.05,
+                },
+            },
+            Outputs = {
+                MainOutput1 = InstanceOutput {
+                    SourceOp = "GroupTransform",
+                    Source = "Output",
+                },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                Canvas = Background {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        ["TopLeftAlpha"] = Input { Value = 0 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+                },
+                PlateBG = Background {
+                    Inputs = {
+                        Width = Input { Value = 1180 },
+                        Height = Input { Value = 130 },
+                        TopLeftRed = Input { Value = 0.04 },
+                        TopLeftGreen = Input { Value = 0.04 },
+                        TopLeftBlue = Input { Value = 0.05 },
+                        ["TopLeftAlpha"] = Input { Value = 0.78 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 80 } },
+                },
+                CaptionText = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        StyledText = Input { Value = "This line matters" },
+                        Font = Input { Value = "Open Sans" },
+                        Style = Input { Value = "Bold" },
+                        Size = Input { Value = 0.05 },
+                        Center = Input { Value = { 0.5, 0.12 } },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 0 } },
+                },
+                MergeText = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "Canvas", Source = "Output" },
+                        Foreground = Input { SourceOp = "CaptionText", Source = "Output" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 440, 0 } },
+                },
+                MergePlate = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "MergeText", Source = "Output" },
+                        Foreground = Input { SourceOp = "PlateBG", Source = "Output" },
+                        Center = Input { Value = { 0.5, 0.12 } },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 660, 0 } },
+                },
+                GroupTransform = Transform {
+                    Inputs = {
+                        Center = Input { Value = { 0.5, 0.12 } },
+                        Size = Input { SourceOp = "ScaleAnim", Source = "Value" },
+                        Blend = Input { SourceOp = "ScaleAnim", Source = "Value" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 880, 0 } },
+                },
+                ScaleAnim = BezierSpline {
+                    KeyFrames = {
+                        [0] = { 0.82, RH = { 8, 0.88 }, Flags = { Linear = true } },
+                        [14] = { 1, LH = { 8, 0.94 }, Flags = { Linear = true } },
+                    },
+                },
+            },
+        },
+    },
+    ActiveTool = "CaptionPop",
+}

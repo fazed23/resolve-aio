@@ -1,0 +1,29 @@
+// S-Curve — Contrast adjustment using a sigmoid function
+// ResolveAIO DCTL Library
+// Applies a parametric S-curve to R, G, B channels for contrast control.
+
+DEFINE_UI_PARAMS(p_Strength, Strength, DCTLUI_SLIDER_FLOAT, 0.5, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_Midpoint, Midpoint, DCTLUI_SLIDER_FLOAT, 0.5, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_Steepness, Steepness, DCTLUI_SLIDER_FLOAT, 6.0, 1.0, 20.0, 0.1)
+
+__DEVICE__ float sigmoid(float x, float mid, float steep) {
+    return 1.0f / (1.0f + _expf(-steep * (x - mid)));
+}
+
+__DEVICE__ float apply_scurve(float x, float strength, float mid, float steep) {
+    float linear = x;
+    float curved = sigmoid(x, mid, steep);
+    // Normalize so that 0 maps to 0 and 1 maps to 1
+    float low = sigmoid(0.0f, mid, steep);
+    float high = sigmoid(1.0f, mid, steep);
+    curved = (curved - low) / (high - low);
+    return _mix(linear, curved, strength);
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B) {
+    float3 out;
+    out.x = apply_scurve(p_R, p_Strength, p_Midpoint, p_Steepness);
+    out.y = apply_scurve(p_G, p_Strength, p_Midpoint, p_Steepness);
+    out.z = apply_scurve(p_B, p_Strength, p_Midpoint, p_Steepness);
+    return out;
+}

@@ -1,0 +1,71 @@
+{
+    Tools = ordered() {
+        DipToColor = MacroOperator {
+            Inputs = ordered() {
+                MainInput1 = InstanceInput {
+                    SourceOp = "DipBG",
+                    Source = "TopLeftRed",
+                    Name = "Color R",
+                    Default = 0.97,
+                },
+                MainInput2 = InstanceInput {
+                    SourceOp = "DipBG",
+                    Source = "TopLeftGreen",
+                    Name = "Color G",
+                    Default = 0.84,
+                },
+                MainInput3 = InstanceInput {
+                    SourceOp = "DipBG",
+                    Source = "TopLeftBlue",
+                    Name = "Color B",
+                    Default = 0.23,
+                },
+            },
+            Outputs = {
+                MainOutput1 = InstanceOutput {
+                    SourceOp = "FadeTransform",
+                    Source = "Output",
+                },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                Canvas = Background {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        ["TopLeftAlpha"] = Input { Value = 0 },
+                    },
+                },
+                DipBG = Background {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        TopLeftRed = Input { Value = 0.97 },
+                        TopLeftGreen = Input { Value = 0.84 },
+                        TopLeftBlue = Input { Value = 0.23 },
+                        ["TopLeftAlpha"] = Input { SourceOp = "DipAnim", Source = "Value" },
+                    },
+                },
+                Merge1 = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "Canvas", Source = "Output" },
+                        Foreground = Input { SourceOp = "DipBG", Source = "Output" },
+                    },
+                },
+                FadeTransform = Transform {
+                    Inputs = {
+                        Blend = Input { SourceOp = "DipAnim", Source = "Value" },
+                    },
+                },
+                DipAnim = BezierSpline {
+                    KeyFrames = {
+                        [0] = { 0, RH = { 8, 0.55 }, Flags = { Linear = true } },
+                        [12] = { 1, LH = { 6, 0.82 }, RH = { 6, 0.82 }, Flags = { Linear = true } },
+                        [24] = { 0, LH = { 8, 0.55 }, Flags = { Linear = true } },
+                    },
+                },
+            },
+        },
+    },
+    ActiveTool = "DipToColor",
+}

@@ -1,0 +1,70 @@
+{
+    Tools = ordered() {
+        ScrollCredits = MacroOperator {
+            Inputs = ordered() {
+                MainInput1 = InstanceInput {
+                    SourceOp = "Text1",
+                    Source = "StyledText",
+                    Name = "Credits",
+                    Default = "Directed by\\nJane Doe\\n\\nEdited by\\nJohn Smith\\n\\nColor by\\nResolveAIO",
+                },
+                MainInput2 = InstanceInput { SourceOp = "Text1", Source = "Font", Name = "Font", Default = "Open Sans" },
+            },
+            Outputs = {
+                MainOutput1 = InstanceOutput { SourceOp = "Merge1", Source = "Output" },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                Background1 = Background {
+                    Inputs = {
+                        Width = Input { Value = 1080 },
+                        Height = Input { Value = 1920 },
+                        TopLeftRed = Input { Value = 0.01 },
+                        TopLeftGreen = Input { Value = 0.01 },
+                        TopLeftBlue = Input { Value = 0.01 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+                },
+                Text1 = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1080 },
+                        Height = Input { Value = 1920 },
+                        StyledText = Input { Value = "Directed by\\nJane Doe\\n\\nEdited by\\nJohn Smith\\n\\nColor by\\nResolveAIO" },
+                        Font = Input { Value = "Open Sans" },
+                        Style = Input { Value = "Regular" },
+                        Size = Input { Value = 0.05 },
+                        Red1 = Input { Value = 1 },
+                        Green1 = Input { Value = 1 },
+                        Blue1 = Input { Value = 1 },
+                        HorizontalJustificationNew = Input { Value = 1 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 0 } },
+                },
+                Transform1 = Transform {
+                    Inputs = {
+                        Center = Input {
+                            Value = { 0.5, 0.5 },
+                            Expression = "Point(0.5, -0.35 + 1.70 * Blend)",
+                        },
+                        Blend = Input { SourceOp = "ScrollAnim", Source = "Value" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 440, 0 } },
+                },
+                ScrollAnim = BezierSpline {
+                    KeyFrames = {
+                        [0] = { 0, RH = { 40, 0.2 }, Flags = { Linear = true } },
+                        [180] = { 1, LH = { 100, 0.8 }, Flags = { Linear = true } },
+                    },
+                },
+                Merge1 = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "Background1", Source = "Output" },
+                        Foreground = Input { SourceOp = "Transform1", Source = "Output" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 660, 0 } },
+                },
+            },
+        },
+    },
+    ActiveTool = "ScrollCredits",
+}

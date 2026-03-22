@@ -1,0 +1,24 @@
+// Power Knee — Highlight roll-off using power function
+// ResolveAIO DCTL Library
+// Soft-clips highlights with a smooth knee, useful for HDR-to-SDR mapping.
+
+DEFINE_UI_PARAMS(p_Knee, Knee Point, DCTLUI_SLIDER_FLOAT, 0.8, 0.1, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_Power, Power, DCTLUI_SLIDER_FLOAT, 2.0, 0.5, 10.0, 0.1)
+DEFINE_UI_PARAMS(p_Clip, Clip Level, DCTLUI_SLIDER_FLOAT, 1.0, 0.5, 10.0, 0.01)
+
+__DEVICE__ float power_knee(float x, float knee, float power, float clip) {
+    if (x <= knee) {
+        return x;
+    }
+    float overshoot = (x - knee) / (clip - knee);
+    float compressed = knee + (clip - knee) * _powf(overshoot, 1.0f / power);
+    return _fminf(compressed, clip);
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B) {
+    float3 out;
+    out.x = power_knee(p_R, p_Knee, p_Power, p_Clip);
+    out.y = power_knee(p_G, p_Knee, p_Power, p_Clip);
+    out.z = power_knee(p_B, p_Knee, p_Power, p_Clip);
+    return out;
+}

@@ -1,0 +1,37 @@
+// Luma Limiter — Clamps based on luminance while preserving color ratios
+// ResolveAIO DCTL Library
+// Limits luminance without distorting hue — critical for HDR and broadcast.
+
+DEFINE_UI_PARAMS(p_LumaMin, Luma Min, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 0.5, 0.001)
+DEFINE_UI_PARAMS(p_LumaMax, Luma Max, DCTLUI_SLIDER_FLOAT, 1.0, 0.5, 1.5, 0.001)
+
+__DEVICE__ float luma_rec709(float r, float g, float b) {
+    return 0.2126f * r + 0.7152f * g + 0.0722f * b;
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B) {
+    float luma = luma_rec709(p_R, p_G, p_B);
+    float3 out;
+    out.x = p_R;
+    out.y = p_G;
+    out.z = p_B;
+
+    if (luma <= 0.0f) {
+        // Avoid division by zero
+        out.x = p_LumaMin;
+        out.y = p_LumaMin;
+        out.z = p_LumaMin;
+    } else if (luma < p_LumaMin) {
+        float scale = p_LumaMin / luma;
+        out.x = p_R * scale;
+        out.y = p_G * scale;
+        out.z = p_B * scale;
+    } else if (luma > p_LumaMax) {
+        float scale = p_LumaMax / luma;
+        out.x = p_R * scale;
+        out.y = p_G * scale;
+        out.z = p_B * scale;
+    }
+
+    return out;
+}

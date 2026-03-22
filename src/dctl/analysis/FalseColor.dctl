@@ -1,0 +1,50 @@
+// False Color — Exposure analysis overlay
+// ResolveAIO DCTL Library
+// Maps luminance to a color gradient for quick exposure evaluation.
+// Purple=under, Blue=deep shadow, Cyan=shadow, Green=mid, Yellow=highlight,
+// Orange=bright, Red=clipping.
+
+__DEVICE__ float luma_709(float r, float g, float b) {
+    return 0.2126f * r + 0.7152f * g + 0.0722f * b;
+}
+
+__DEVICE__ float3 false_color(float luma) {
+    float3 c;
+    if (luma < 0.02f) {
+        // Clipping black — purple
+        c.x = 0.3f; c.y = 0.0f; c.z = 0.5f;
+    } else if (luma < 0.10f) {
+        // Deep shadow — blue
+        c.x = 0.0f; c.y = 0.0f; c.z = 0.8f;
+    } else if (luma < 0.20f) {
+        // Shadow — cyan
+        c.x = 0.0f; c.y = 0.6f; c.z = 0.8f;
+    } else if (luma < 0.35f) {
+        // Lower mid — teal
+        c.x = 0.0f; c.y = 0.7f; c.z = 0.4f;
+    } else if (luma < 0.50f) {
+        // Middle gray — green
+        c.x = 0.0f; c.y = 0.8f; c.z = 0.0f;
+    } else if (luma < 0.65f) {
+        // Upper mid — yellow-green
+        c.x = 0.5f; c.y = 0.8f; c.z = 0.0f;
+    } else if (luma < 0.78f) {
+        // Highlight — yellow
+        c.x = 1.0f; c.y = 0.9f; c.z = 0.0f;
+    } else if (luma < 0.90f) {
+        // Bright — orange
+        c.x = 1.0f; c.y = 0.5f; c.z = 0.0f;
+    } else if (luma < 0.98f) {
+        // Very bright — red
+        c.x = 1.0f; c.y = 0.0f; c.z = 0.0f;
+    } else {
+        // Clipping white — magenta
+        c.x = 1.0f; c.y = 0.0f; c.z = 1.0f;
+    }
+    return c;
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B) {
+    float luma = luma_709(p_R, p_G, p_B);
+    return false_color(luma);
+}

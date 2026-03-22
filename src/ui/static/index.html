@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResolveAIO — Studio</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            --bg: #0a0a12;
+            --bg2: #0f0f1a;
+            --surface: #141422;
+            --surface2: #1a1a30;
+            --surface3: #22223a;
+            --border: #2a2a44;
+            --border2: #3a3a55;
+            --accent: #e94560;
+            --accent-glow: rgba(233, 69, 96, 0.15);
+            --accent2: #7c3aed;
+            --accent2-glow: rgba(124, 58, 237, 0.15);
+            --blue: #3b82f6;
+            --cyan: #22d3ee;
+            --green: #4ade80;
+            --yellow: #facc15;
+            --orange: #fb923c;
+            --text: #f0f0f5;
+            --text2: #b0b0c8;
+            --text3: #6b6b8a;
+            --radius: 10px;
+            --radius-lg: 14px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ── Sidebar ───────────────────────────────── */
+        .sidebar {
+            width: 260px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .sidebar-header h1 span { color: var(--accent); }
+
+        .sidebar-header .subtitle {
+            font-size: 11px;
+            color: var(--text3);
+            margin-top: 4px;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 12px;
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            margin-bottom: 20px;
+        }
+
+        .nav-section-title {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0 8px;
+            margin-bottom: 6px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 12px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text2);
+            transition: all 0.15s;
+            border: 1px solid transparent;
+        }
+
+        .nav-item:hover { background: var(--surface2); color: var(--text); }
+        .nav-item.active {
+            background: var(--accent-glow);
+            color: var(--accent);
+            border-color: rgba(233, 69, 96, 0.2);
+        }
+
+        .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+        .nav-badge {
+            margin-left: auto;
+            font-size: 10px;
+            background: var(--surface3);
+            color: var(--text3);
+            padding: 2px 7px;
+            border-radius: 10px;
+        }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .status-dot.connected { background: var(--green); box-shadow: 0 0 6px var(--green); }
+        .status-dot.disconnected { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+
+        #sidebar-status { font-size: 11px; color: var(--text3); }
+
+        /* ── Main Content ──────────────────────────── */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        /* ── Tab Bar ───────────────────────────────── */
+        .tab-bar {
+            display: flex;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0 16px;
+            gap: 4px;
+            align-items: flex-end;
+            height: 44px;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text3);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .tab:hover { color: var(--text2); }
+        .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+        /* ── Panels ────────────────────────────────── */
+        .panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+        .panel.active { display: flex; }
+
+        /* ── Chat Panel ────────────────────────────── */
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .msg {
+            max-width: 75%;
+            padding: 12px 16px;
+            border-radius: var(--radius-lg);
+            font-size: 13.5px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .msg.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, var(--accent2), #5b21b6);
+            border-bottom-right-radius: 4px;
+        }
+
+        .msg.assistant {
+            align-self: flex-start;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .msg.system {
+            align-self: center;
+            background: var(--surface3);
+            font-size: 12px;
+            color: var(--text2);
+            max-width: 90%;
+            text-align: center;
+        }
+
+        .msg.assistant .msg-label {
+            font-size: 10px;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .chat-input-area {
+            padding: 16px 20px;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+        }
+
+        .chat-input-wrap {
+            display: flex;
+            gap: 8px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 4px;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input-wrap:focus-within { border-color: var(--accent); }
+
+        #chat-input {
+            flex: 1;
+            padding: 10px 14px;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        #chat-input::placeholder { color: var(--text3); }
+
+        #chat-send {
+            padding: 8px 20px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        #chat-send:hover { opacity: 0.85; }
+
+        .quick-bar {
+            display: flex;
+            gap: 6px;
+            padding: 10px 20px 0;
+            overflow-x: auto;
+            flex-wrap: wrap;
+        }
+
+        .quick-chip {
+            padding: 5px 12px;
+            background: var(--surface3);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text3);
+            font-size: 11px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s;
+        }
+
+        .quick-chip:hover { background: var(--accent-glow); color: var(--accent); border-color: var(--accent); }
+
+        /* ── Presets Panel ─────────────────────────── */
+        .presets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 16px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .preset-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px var(--accent-glow);
+            transform: translateY(-2px);
+        }
+
+        .preset-card .tag {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .tag.dctl { background: rgba(59,130,246,0.15); color: var(--blue); }
+        .tag.powergrade { background: rgba(124,58,237,0.15); color: var(--accent2); }
+        .tag.lut { background: rgba(74,222,128,0.15); color: var(--green); }
+        .tag.fusion { background: rgba(251,146,60,0.15); color: var(--orange); }
+        .tag.automation { background: rgba(233,69,96,0.15); color: var(--accent); }
+
+        .preset-card h3 { font-size: 14px; margin-bottom: 4px; }
+        .preset-card p { font-size: 12px; color: var(--text3); line-height: 1.4; }
+
+        .preset-card .preset-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 12px;
+        }
+
+        .preset-btn {
+            padding: 5px 12px;
+            font-size: 11px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--surface3);
+            color: var(--text2);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .preset-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+        .preset-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+
+        /* ── Tutorials Panel ───────────────────────── */
+        .tutorials-list {
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .tutorial-card {
+            display: flex;
+            gap: 16px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .tutorial-card:hover { border-color: var(--accent); }
+
+        .tutorial-num {
+            width: 40px;
+            height: 40px;
+            background: var(--accent-glow);
+            border: 1px solid rgba(233,69,96,0.3);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+
+        .tutorial-info h3 { font-size: 14px; margin-bottom: 3px; }
+        .tutorial-info p { font-size: 12px; color: var(--text3); line-height: 1.4; }
+        .tutorial-info .duration {
+            font-size: 11px;
+            color: var(--text3);
+            margin-top: 6px;
+        }
+
+        /* ── Text FX Panel ─────────────────────────── */
+        .textfx-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 14px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .textfx-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .textfx-card:hover { border-color: var(--cyan); transform: translateY(-2px); }
+
+        .textfx-preview {
+            height: 100px;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .textfx-preview .anim-text { color: var(--cyan); }
+
+        .textfx-card .textfx-info { padding: 12px; }
+        .textfx-card .textfx-info h4 { font-size: 13px; margin-bottom: 2px; }
+        .textfx-card .textfx-info p { font-size: 11px; color: var(--text3); }
+
+        /* ── Automation Panel ──────────────────────── */
+        .auto-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .auto-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+        }
+
+        .auto-card h3 {
+            font-size: 15px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .auto-card p { font-size: 12px; color: var(--text3); line-height: 1.5; margin-bottom: 12px; }
+
+        .auto-card .auto-run {
+            padding: 8px 16px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            width: 100%;
+            transition: opacity 0.2s;
+        }
+
+        .auto-card .auto-run:hover { opacity: 0.85; }
+
+        /* ── Scrollbar ─────────────────────────────── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+
+        /* ── Animations ────────────────────────────── */
+        @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        .msg { animation: fadeUp 0.2s ease; }
+
+        @keyframes typewriter {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { text-shadow: 0 0 10px var(--cyan), 0 0 20px rgba(34,211,238,0.3); }
+            50% { text-shadow: 0 0 20px var(--cyan), 0 0 40px rgba(34,211,238,0.5); }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── Sidebar ──────────────────────────────────── -->
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <h1>Resolve<span>AIO</span></h1>
+        <div class="subtitle">Studio Control Panel v2.0</div>
+    </div>
+
+    <nav class="sidebar-nav">
+        <div class="nav-section">
+            <div class="nav-section-title">Main</div>
+            <div class="nav-item active" data-panel="chat">
+                <span class="nav-icon">&#9672;</span> AI Assistant
+            </div>
+            <div class="nav-item" data-panel="presets">
+                <span class="nav-icon">&#9670;</span> Presets & Looks
+                <span class="nav-badge" id="presets-badge">0</span>
+            </div>
+            <div class="nav-item" data-panel="textfx">
+                <span class="nav-icon">T</span> Text Animations
+                <span class="nav-badge" id="textfx-badge">0</span>
+            </div>
+            <div class="nav-item" data-panel="transitions">
+                <span class="nav-icon">&#8649;</span> Transitions
+                <span class="nav-badge" id="transitions-badge">0</span>
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Tools</div>
+            <div class="nav-item" data-panel="automation">
+                <span class="nav-icon">&#9881;</span> Automation
+            </div>
+            <div class="nav-item" data-panel="roughcut">
+                <span class="nav-icon">&#9998;</span> Rough Cut AI
+            </div>
+            <div class="nav-item" data-panel="colorsci">
+                <span class="nav-icon">&#9711;</span> Color Science
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Learn</div>
+            <div class="nav-item" data-panel="tutorials">
+                <span class="nav-icon">&#9654;</span> Tutorials
+                <span class="nav-badge">12</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="sidebar-footer">
+        <span class="status-dot disconnected" id="status-dot"></span>
+        <span id="sidebar-status">Connecting...</span>
+    </div>
+</aside>
+
+<!-- ── Main ─────────────────────────────────────── -->
+<div class="main">
+
+    <!-- Tab Bar -->
+    <div class="tab-bar" id="tab-bar"></div>
+
+    <!-- ═══ Chat Panel ═══ -->
+    <div class="panel active" id="panel-chat">
+        <div class="quick-bar">
+            <span class="quick-chip" data-cmd="version">Version</span>
+            <span class="quick-chip" data-cmd="list projects">Projects</span>
+            <span class="quick-chip" data-cmd="current project">Current Project</span>
+            <span class="quick-chip" data-cmd="list timelines">Timelines</span>
+            <span class="quick-chip" data-cmd="list clips">Clips</span>
+            <span class="quick-chip" data-cmd="go to color">Color Page</span>
+            <span class="quick-chip" data-cmd="go to edit">Edit Page</span>
+            <span class="quick-chip" data-cmd="go to fusion">Fusion Page</span>
+            <span class="quick-chip" data-cmd="save project">Save</span>
+            <span class="quick-chip" data-cmd="render presets">Render Presets</span>
+            <span class="quick-chip" data-cmd="add marker at current position">Add Marker</span>
+            <span class="quick-chip" data-cmd="apply film look to all clips">Film Look</span>
+            <span class="quick-chip" data-cmd="auto grade all clips">Auto Grade</span>
+            <span class="quick-chip" data-cmd="remove silence">Remove Silence</span>
+            <span class="quick-chip" data-cmd="batch render all timelines">Batch Render</span>
+        </div>
+        <div id="chat-messages"></div>
+        <div class="chat-input-area">
+            <div class="chat-input-wrap">
+                <input id="chat-input" type="text" placeholder="Ask AI to do anything in Resolve... (Hebrew & English)" autocomplete="off" />
+                <button id="chat-send">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Presets Panel ═══ -->
+    <div class="panel" id="panel-presets">
+        <div class="presets-grid" id="presets-grid"></div>
+    </div>
+
+    <!-- ═══ Text FX Panel ═══ -->
+    <div class="panel" id="panel-textfx">
+        <div class="textfx-grid" id="textfx-grid"></div>
+    </div>
+
+    <!-- ═══ Transitions Panel ═══ -->
+    <div class="panel" id="panel-transitions">
+        <div class="textfx-grid" id="transitions-grid"></div>
+    </div>
+
+    <!-- ═══ Automation Panel ═══ -->
+    <div class="panel" id="panel-automation">
+        <div class="auto-grid" id="auto-grid"></div>
+    </div>
+
+    <!-- ═══ Rough Cut Panel ═══ -->
+    <div class="panel" id="panel-roughcut">
+        <div style="padding:20px; display:flex; flex-direction:column; gap:16px; overflow-y:auto; flex:1;">
+            <div style="background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px;">
+                <h2 style="font-size:18px; margin-bottom:8px;">&#9998; Rough Cut AI</h2>
+                <p style="color:var(--text3); font-size:13px; line-height:1.6; margin-bottom:20px;">
+                    Import your footage and let AI create an initial assembly. The system analyzes audio, detects scenes,
+                    removes silence, and arranges clips on the timeline automatically.
+                </p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+                    <div style="background:var(--surface3); padding:14px; border-radius:var(--radius);">
+                        <div style="font-size:12px; color:var(--text3); margin-bottom:4px;">Source Folder</div>
+                        <div style="font-size:13px; color:var(--text);" id="rc-folder">Not selected</div>
+                    </div>
+                    <div style="background:var(--surface3); padding:14px; border-radius:var(--radius);">
+                        <div style="font-size:12px; color:var(--text3); margin-bottom:4px;">Timeline Name</div>
+                        <input style="background:transparent; border:none; color:var(--text); font-size:13px; width:100%; outline:none;" placeholder="Rough Cut v1" id="rc-name" />
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
+                    <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text2); cursor:pointer;">
+                        <input type="checkbox" checked id="rc-silence" /> Remove silence
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text2); cursor:pointer;">
+                        <input type="checkbox" checked id="rc-sort" /> Sort by timecode
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text2); cursor:pointer;">
+                        <input type="checkbox" id="rc-colorTag" /> Color-tag by type
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text2); cursor:pointer;">
+                        <input type="checkbox" id="rc-markers" /> Add scene markers
+                    </label>
+                </div>
+                <button class="auto-run" onclick="runRoughCut()" style="padding:12px; font-size:14px;">
+                    Create Rough Cut
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Color Science Panel ═══ -->
+    <div class="panel" id="panel-colorsci">
+        <div style="padding:20px; overflow-y:auto; flex:1;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr)); gap:16px;" id="colorsci-grid"></div>
+        </div>
+    </div>
+
+    <!-- ═══ Tutorials Panel ═══ -->
+    <div class="panel" id="panel-tutorials">
+        <div class="tutorials-list" id="tutorials-list"></div>
+    </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  ResolveAIO Studio — Client-Side Logic
+// ═══════════════════════════════════════════════
+
+// ── Data ──────────────────────────────────────
+
+let PRESETS = [];
+let TEXT_ANIMATIONS = [];
+let TRANSITIONS = [];
+let CATALOG_COUNTS = { dctl: 0, lut: 0, fusion_template: 0, titles: 0, transitions: 0 };
+
+const AUTOMATIONS = [
+    { name: "Batch Render", icon: "&#9654;", desc: "Render all timelines in the project with your chosen preset. Outputs to a selected folder.", action: "batch render all timelines" },
+    { name: "Auto Grade", icon: "&#9670;", desc: "Apply a bundled LUT, DCTL, or PowerGrade to every clip on the timeline. Skips already-graded clips.", action: "auto grade all clips" },
+    { name: "Silence Remover", icon: "&#9986;", desc: "Detect silent segments in audio tracks and mark them with red markers or remove them.", action: "detect and mark silence" },
+    { name: "Color Tag Organizer", icon: "&#9673;", desc: "Automatically color-tag clips by duration: short clips (B-roll), medium, and long (interviews).", action: "color tag clips by duration" },
+    { name: "Install Presets", icon: "&#8681;", desc: "Install all bundled DCTLs, LUTs, and Fusion templates to the Resolve directories.", action: "install all presets" },
+    { name: "Smart Reframe", icon: "&#8644;", desc: "AI-powered reframe from 16:9 to 9:16 for social media. Centers on detected faces.", action: "smart reframe to vertical" },
+    { name: "Export PowerGrades", icon: "&#9633;", desc: "Export real DRX PowerGrades from every clip on the current timeline.", action: "export stills from all clips" },
+    { name: "Timeline Report", icon: "&#9776;", desc: "Generate a detailed report of the current timeline: clips, duration, markers, gaps.", action: "generate timeline report" },
+];
+
+const COLORSCI = [
+    { name: "ACES 1.3 Workflow", desc: "Full ACES pipeline with Input/Output Device Transforms. Industry standard for VFX and film.", nodes: "IDT → CC → RRT → ODT" },
+    { name: "ACES Lite", desc: "Simplified ACES using CST nodes. Same color science, easier setup. Great for indie projects.", nodes: "CST (Log→ACEScct) → Grade → CST (ACEScct→Rec709)" },
+    { name: "DaVinci Wide Gamut", desc: "Resolve's native wide gamut/log space. Best for projects staying inside Resolve.", nodes: "CST (Camera→DWG) → Grade → CST (DWG→Rec709)" },
+    { name: "Display Referred (Rec.709)", desc: "Simple Rec.709 workflow. Quick, no transforms needed. Good for web content.", nodes: "Direct grade in Rec.709" },
+    { name: "HDR10 PQ", desc: "HDR10 output with PQ transfer function. For 1000-nit HDR displays.", nodes: "CST → Grade → PQ Output (ST.2084)" },
+    { name: "Dolby Vision", desc: "Dolby Vision grading with trim passes. Requires Resolve Studio.", nodes: "Base Layer → L2 Trim → L5 Trim → Analysis" },
+    { name: "Camera-Native (No Transform)", desc: "Grade directly in camera log space. Simple but limited dynamic range utilization.", nodes: "Camera Log → Grade → Output LUT" },
+];
+
+const TUTORIALS = [
+    { title: "Getting Started with ResolveAIO", desc: "Install, connect, and run your first AI command in under 5 minutes.", duration: "5 min", cat: "Basics" },
+    { title: "AI Chat Commands — Complete Guide", desc: "Every command you can use: projects, timelines, media, color, render, and Fusion.", duration: "12 min", cat: "Basics" },
+    { title: "Understanding Node Trees", desc: "How professional colorists build their node trees and why order matters.", duration: "15 min", cat: "Color" },
+    { title: "PowerGrades Explained", desc: "What PowerGrades are, how to use them, and how to build your own.", duration: "10 min", cat: "Color" },
+    { title: "ACES vs DaVinci Wide Gamut", desc: "When to use ACES, when to use DWG, and how to set them up properly.", duration: "18 min", cat: "Color Science" },
+    { title: "Camera-Specific Color Workflows", desc: "Optimal workflows for Sony, ARRI, Canon, RED, Blackmagic, and iPhone.", duration: "20 min", cat: "Color Science" },
+    { title: "DCTLs — What They Are & How to Use", desc: "Everything about DaVinci Color Transform Language: install, use, customize.", duration: "12 min", cat: "Advanced" },
+    { title: "Creating Text Animations in Fusion", desc: "Build animated titles, lower thirds, and viral hooks from scratch.", duration: "15 min", cat: "Fusion" },
+    { title: "Rough Cut Workflow with AI", desc: "Let AI assemble your first cut: import, detect scenes, remove silence.", duration: "8 min", cat: "Editing" },
+    { title: "Batch Rendering Like a Pro", desc: "Render multiple timelines, presets, and formats in one go.", duration: "7 min", cat: "Delivery" },
+    { title: "Film Emulation Looks", desc: "Recreate Kodak, Fuji, and vintage film stocks with DCTLs and PowerGrades.", duration: "14 min", cat: "Creative" },
+    { title: "HDR Grading Fundamentals", desc: "HDR10, Dolby Vision, and HLG workflows in DaVinci Resolve.", duration: "20 min", cat: "HDR" },
+];
+
+// ── Render UI ────────────────────────────────
+
+function renderPresets() {
+    const grid = document.getElementById('presets-grid');
+    if (!PRESETS.length) {
+        grid.innerHTML = `
+            <div class="preset-card">
+                <span class="tag lut">REAL ASSETS</span>
+                <h3>No bundled looks found yet</h3>
+                <p>The presets panel is now backed by files on disk. Add LUTs, DCTLs, or DRX PowerGrades to the bundle and reload the page.</p>
+            </div>
+        `;
+        return;
+    }
+
+    grid.innerHTML = PRESETS.map(p => `
+        <div class="preset-card" onclick="applyPreset(${JSON.stringify(p.name)})">
+            <span class="tag ${tagClassFor(p)}">${tagLabelFor(p)}</span>
+            <h3>${p.name}</h3>
+            <p>${p.description}</p>
+            <div style="margin-top:8px; font-size:11px; color:var(--text3);">${p.category} &middot; ${p.relative}</div>
+            <div class="preset-actions">
+                <button class="preset-btn primary" onclick="event.stopPropagation(); applyPreset(${JSON.stringify(p.name)})">${primaryActionFor(p)}</button>
+                <button class="preset-btn" onclick="event.stopPropagation(); previewPreset(${JSON.stringify(p.name)})">Preview</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderTextFX() {
+    const grid = document.getElementById('textfx-grid');
+    if (!TEXT_ANIMATIONS.length) {
+        grid.innerHTML = `
+            <div class="preset-card">
+                <span class="tag fusion">TEMPLATES</span>
+                <h3>No Fusion templates bundled</h3>
+                <p>Add real <code>.setting</code> files under <code>presets/fusion_templates</code> and reload the page.</p>
+            </div>
+        `;
+        return;
+    }
+
+    grid.innerHTML = TEXT_ANIMATIONS.map(t => `
+        <div class="textfx-card" onclick="applyTextFX(${JSON.stringify(t.name)})">
+            <div class="textfx-preview">
+                <span class="anim-text">${t.name.split(' ')[0]}</span>
+            </div>
+            <div class="textfx-info">
+                <h4>${t.name}</h4>
+                <p>${t.description}</p>
+                <div style="margin-top:8px; font-size:11px; color:var(--text3);">${t.category} &middot; ${t.relative}</div>
+                <div class="preset-actions">
+                    <button class="preset-btn primary" onclick="event.stopPropagation(); applyTextFX(${JSON.stringify(t.name)})">Install</button>
+                    <button class="preset-btn" onclick="event.stopPropagation(); previewPreset(${JSON.stringify(t.name)})">Preview</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderTransitions() {
+    const grid = document.getElementById('transitions-grid');
+    if (!TRANSITIONS.length) {
+        grid.innerHTML = `
+            <div class="preset-card">
+                <span class="tag fusion">TRANSITIONS</span>
+                <h3>No Fusion transitions bundled</h3>
+                <p>Add real <code>.setting</code> files under <code>presets/fusion_templates/Transitions</code> and reload the page.</p>
+            </div>
+        `;
+        return;
+    }
+
+    grid.innerHTML = TRANSITIONS.map(t => `
+        <div class="textfx-card" onclick="installTransition(${JSON.stringify(t.name)})">
+            <div class="textfx-preview">
+                <span class="anim-text">${t.name.split(' ')[0]}</span>
+            </div>
+            <div class="textfx-info">
+                <h4>${t.name}</h4>
+                <p>${t.description}</p>
+                <div style="margin-top:8px; font-size:11px; color:var(--text3);">${t.category} &middot; ${t.relative}</div>
+                <div class="preset-actions">
+                    <button class="preset-btn primary" onclick="event.stopPropagation(); installTransition(${JSON.stringify(t.name)})">Install</button>
+                    <button class="preset-btn" onclick="event.stopPropagation(); previewPreset(${JSON.stringify(t.name)})">Preview</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderAutomation() {
+    const grid = document.getElementById('auto-grid');
+    grid.innerHTML = AUTOMATIONS.map(a => `
+        <div class="auto-card">
+            <h3><span>${a.icon}</span> ${a.name}</h3>
+            <p>${a.desc}</p>
+            <button class="auto-run" onclick="sendCommand('${a.action}')">${a.name}</button>
+        </div>
+    `).join('');
+}
+
+function renderColorSci() {
+    const grid = document.getElementById('colorsci-grid');
+    grid.innerHTML = COLORSCI.map(c => `
+        <div class="preset-card">
+            <span class="tag powergrade">WORKFLOW</span>
+            <h3>${c.name}</h3>
+            <p>${c.desc}</p>
+            <div style="margin-top:10px; padding:8px 12px; background:var(--bg); border-radius:6px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--cyan);">
+                ${c.nodes}
+            </div>
+            <div class="preset-actions">
+                <button class="preset-btn primary" onclick="sendCommand('setup ${c.name} workflow')">Setup</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderTutorials() {
+    const list = document.getElementById('tutorials-list');
+    list.innerHTML = TUTORIALS.map((t, i) => `
+        <div class="tutorial-card" onclick="openTutorial(${i})">
+            <div class="tutorial-num">${i + 1}</div>
+            <div class="tutorial-info">
+                <h3>${t.title}</h3>
+                <p>${t.desc}</p>
+                <div class="duration">${t.cat} &middot; ${t.duration} read</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function tagClassFor(asset) {
+    if (asset.type === 'FusionTemplate') return 'fusion';
+    return asset.type.toLowerCase();
+}
+
+function tagLabelFor(asset) {
+    if (asset.type === 'FusionTemplate') return 'FUSION';
+    return asset.type.toUpperCase();
+}
+
+function primaryActionFor(asset) {
+    return asset.action === 'install' ? 'Install' : 'Apply';
+}
+
+async function loadCatalog() {
+    try {
+        const response = await fetch('/api/catalog');
+        const data = await response.json();
+        PRESETS = data.presets || [];
+        TEXT_ANIMATIONS = data.text_animations || [];
+        TRANSITIONS = data.transitions || [];
+        CATALOG_COUNTS = data.counts || CATALOG_COUNTS;
+        document.getElementById('presets-badge').textContent = String(PRESETS.length);
+        document.getElementById('textfx-badge').textContent = String(TEXT_ANIMATIONS.length);
+        document.getElementById('transitions-badge').textContent = String(TRANSITIONS.length);
+    } catch (error) {
+        PRESETS = [];
+        TEXT_ANIMATIONS = [];
+        TRANSITIONS = [];
+        document.getElementById('presets-badge').textContent = '0';
+        document.getElementById('textfx-badge').textContent = '0';
+        document.getElementById('transitions-badge').textContent = '0';
+    }
+
+    renderPresets();
+    renderTextFX();
+    renderTransitions();
+}
+
+// ── Navigation ───────────────────────────────
+
+const navItems = document.querySelectorAll('.nav-item');
+const panels = document.querySelectorAll('.panel');
+
+navItems.forEach(item => {
+    item.addEventListener('click', () => {
+        const target = item.dataset.panel;
+        navItems.forEach(n => n.classList.remove('active'));
+        item.classList.add('active');
+        panels.forEach(p => p.classList.toggle('active', p.id === `panel-${target}`));
+    });
+});
+
+// ── WebSocket Chat ───────────────────────────
+
+const messages = document.getElementById('chat-messages');
+const chatInput = document.getElementById('chat-input');
+const chatSend = document.getElementById('chat-send');
+const statusDot = document.getElementById('status-dot');
+const sidebarStatus = document.getElementById('sidebar-status');
+let ws = null;
+
+function addMessage(text, type = 'assistant') {
+    const div = document.createElement('div');
+    div.className = `msg ${type}`;
+    if (type === 'assistant') {
+        div.innerHTML = `<div class="msg-label">ResolveAIO</div>${escapeHtml(text)}`;
+    } else {
+        div.textContent = text;
+    }
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function connect() {
+    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(`${protocol}//${location.host}/ws`);
+
+    ws.onopen = () => {
+        statusDot.className = 'status-dot connected';
+        sidebarStatus.textContent = 'Connected to Resolve';
+        chatSend.disabled = false;
+    };
+
+    ws.onclose = () => {
+        statusDot.className = 'status-dot disconnected';
+        sidebarStatus.textContent = 'Reconnecting...';
+        chatSend.disabled = true;
+        setTimeout(connect, 3000);
+    };
+
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        addMessage(data.message, data.type || 'assistant');
+    };
+}
+
+function sendCommand(text) {
+    if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+    addMessage(text, 'user');
+    ws.send(JSON.stringify({ message: text }));
+}
+
+function send() {
+    const text = chatInput.value.trim();
+    if (!text) return;
+    sendCommand(text);
+    chatInput.value = '';
+}
+
+chatSend.addEventListener('click', send);
+chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+
+document.querySelectorAll('.quick-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        chatInput.value = chip.dataset.cmd;
+        send();
+    });
+});
+
+// ── Actions ──────────────────────────────────
+
+function applyPreset(name) { sendCommand(`apply preset "${name}"`); }
+function previewPreset(name) { sendCommand(`preview preset "${name}"`); }
+function applyTextFX(name) { sendCommand(`install text animation "${name}"`); }
+function installTransition(name) { sendCommand(`install transition "${name}"`); }
+function runRoughCut() {
+    const name = document.getElementById('rc-name').value || 'Rough Cut v1';
+    const opts = [];
+    if (document.getElementById('rc-silence').checked) opts.push('remove silence');
+    if (document.getElementById('rc-sort').checked) opts.push('sort by timecode');
+    if (document.getElementById('rc-colorTag').checked) opts.push('color tag clips');
+    if (document.getElementById('rc-markers').checked) opts.push('add scene markers');
+    sendCommand(`create rough cut "${name}" with options: ${opts.join(', ')}`);
+}
+function openTutorial(index) {
+    const t = TUTORIALS[index];
+    // Switch to chat and ask for the tutorial
+    navItems.forEach(n => n.classList.remove('active'));
+    document.querySelector('[data-panel="chat"]').classList.add('active');
+    panels.forEach(p => p.classList.toggle('active', p.id === 'panel-chat'));
+    sendCommand(`teach me: ${t.title}`);
+}
+
+// ── Init ─────────────────────────────────────
+
+renderAutomation();
+renderColorSci();
+renderTutorials();
+loadCatalog();
+
+fetch('/api/status').then(r => r.json()).then(data => {
+    if (data.connected) {
+        addMessage(`Connected to DaVinci Resolve ${data.version}\nProject: ${data.project || 'None'}\nTimeline: ${data.timeline || 'None'}`, 'system');
+    }
+}).catch(() => {});
+
+connect();
+</script>
+</body>
+</html>

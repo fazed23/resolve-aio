@@ -1,0 +1,20 @@
+// Legal to Full — Converts video levels (16-235) to data levels (0-255)
+// ResolveAIO DCTL Library
+
+DEFINE_UI_PARAMS(p_BitDepth, Bit Depth, DCTLUI_COMBO_BOX, 0, {8-bit, 10-bit})
+
+__DEVICE__ float legal_to_full(float x, int bit_depth) {
+    if (bit_depth == 0) {
+        return (x - 16.0f / 255.0f) * (255.0f / 219.0f);
+    } else {
+        return (x - 64.0f / 1023.0f) * (1023.0f / 876.0f);
+    }
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B) {
+    float3 out;
+    out.x = legal_to_full(p_R, p_BitDepth);
+    out.y = legal_to_full(p_G, p_BitDepth);
+    out.z = legal_to_full(p_B, p_BitDepth);
+    return out;
+}

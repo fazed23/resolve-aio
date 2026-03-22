@@ -1,0 +1,54 @@
+{
+    Tools = ordered() {
+        ScalePopTitle = MacroOperator {
+            Inputs = ordered() {
+                MainInput1 = InstanceInput { SourceOp = "Text1", Source = "StyledText", Name = "Text", Default = "Scale Pop" },
+                MainInput2 = InstanceInput { SourceOp = "Text1", Source = "Font", Name = "Font", Default = "Open Sans" },
+            },
+            Outputs = {
+                MainOutput1 = InstanceOutput { SourceOp = "Merge1", Source = "Output" },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                Background1 = Background {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        ["TopLeftAlpha"] = Input { Value = 0 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+                },
+                Text1 = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        StyledText = Input { Value = "Scale Pop" },
+                        Font = Input { Value = "Open Sans" },
+                        Style = Input { Value = "Bold" },
+                        Size = Input { SourceOp = "PopSize", Source = "Value" },
+                        Center = Input { Value = { 0.5, 0.5 } },
+                        Red1 = Input { Value = 1 },
+                        Green1 = Input { Value = 0.96 },
+                        Blue1 = Input { Value = 0.92 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 0 } },
+                },
+                PopSize = BezierSpline {
+                    KeyFrames = {
+                        [0] = { 0.01, RH = { 6, 0.04 }, Flags = { Linear = true } },
+                        [10] = { 0.11, LH = { 5, 0.05 }, RH = { 4, 0.09 } },
+                        [18] = { 0.075, LH = { 5, 0.10 }, Flags = { Linear = true } },
+                    },
+                },
+                Merge1 = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "Background1", Source = "Output" },
+                        Foreground = Input { SourceOp = "Text1", Source = "Output" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 440, 0 } },
+                },
+            },
+        },
+    },
+    ActiveTool = "ScalePopTitle",
+}

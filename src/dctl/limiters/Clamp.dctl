@@ -1,0 +1,11 @@
+// Clamp — Hard clamp of RGB values to 0-1 range
+// ResolveAIO DCTL Library
+// Simple but essential — removes any super-whites or sub-blacks.
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B) {
+    float3 out;
+    out.x = _fmaxf(0.0f, _fminf(1.0f, p_R));
+    out.y = _fmaxf(0.0f, _fminf(1.0f, p_G));
+    out.z = _fmaxf(0.0f, _fminf(1.0f, p_B));
+    return out;
+}

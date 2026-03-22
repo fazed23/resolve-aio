@@ -1,0 +1,89 @@
+{
+    Tools = ordered() {
+        MonoTicker = MacroOperator {
+            Inputs = ordered() {
+                MainInput1 = InstanceInput {
+                    SourceOp = "TickerText",
+                    Source = "StyledText",
+                    Name = "Text",
+                    Default = "STATUS: COLOR PIPELINE ONLINE",
+                },
+            },
+            Outputs = {
+                MainOutput1 = InstanceOutput {
+                    SourceOp = "SlideTransform",
+                    Source = "Output",
+                },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                Canvas = Background {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        ["TopLeftAlpha"] = Input { Value = 0 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+                },
+                BandBG = Background {
+                    Inputs = {
+                        Width = Input { Value = 1280 },
+                        Height = Input { Value = 86 },
+                        TopLeftRed = Input { Value = 0.03 },
+                        TopLeftGreen = Input { Value = 0.04 },
+                        TopLeftBlue = Input { Value = 0.04 },
+                        ["TopLeftAlpha"] = Input { Value = 0.95 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 120 } },
+                },
+                TickerText = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        StyledText = Input { Value = "STATUS: COLOR PIPELINE ONLINE" },
+                        Font = Input { Value = "JetBrains Mono" },
+                        Style = Input { Value = "Bold" },
+                        Size = Input { Value = 0.04 },
+                        Center = Input { Value = { 0.5, 0.9 } },
+                        Red1 = Input { Value = 0.73 },
+                        Green1 = Input { Value = 1 },
+                        Blue1 = Input { Value = 0.87 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 0 } },
+                },
+                MergeText = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "Canvas", Source = "Output" },
+                        Foreground = Input { SourceOp = "TickerText", Source = "Output" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 440, 0 } },
+                },
+                MergeBand = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "MergeText", Source = "Output" },
+                        Foreground = Input { SourceOp = "BandBG", Source = "Output" },
+                        Center = Input { Value = { 0.5, 0.9 } },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 660, 0 } },
+                },
+                SlideTransform = Transform {
+                    Inputs = {
+                        Center = Input {
+                            Value = { 0.5, 0.9 },
+                            Expression = "Point(-0.1 + 0.6 * Blend, 0.9)",
+                        },
+                        Blend = Input { SourceOp = "TickerAnim", Source = "Value" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 880, 0 } },
+                },
+                TickerAnim = BezierSpline {
+                    KeyFrames = {
+                        [0] = { 0, RH = { 12, 0.33 }, Flags = { Linear = true } },
+                        [22] = { 1, LH = { 10, 0.67 }, Flags = { Linear = true } },
+                    },
+                },
+            },
+        },
+    },
+    ActiveTool = "MonoTicker",
+}

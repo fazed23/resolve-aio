@@ -1,0 +1,50 @@
+// Bleach Bypass — High contrast, desaturated film processing effect
+// ResolveAIO DCTL Library
+// Simulates skipping the bleach step in film processing,
+// resulting in silver retention: high contrast + muted colors.
+
+DEFINE_UI_PARAMS(p_Amount, Amount, DCTLUI_SLIDER_FLOAT, 0.6, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_Desat, Desaturation, DCTLUI_SLIDER_FLOAT, 0.5, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_Contrast, Contrast Boost, DCTLUI_SLIDER_FLOAT, 0.3, 0.0, 1.0, 0.01)
+
+__DEVICE__ float luma_709(float r, float g, float b) {
+    return 0.2126f * r + 0.7152f * g + 0.0722f * b;
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B) {
+    float luma = luma_709(p_R, p_G, p_B);
+    float3 out;
+
+    // Silver retention: add luma back (simulating undeveloped silver halide)
+    float silver = luma * p_Amount;
+    float r = p_R + silver;
+    float g = p_G + silver;
+    float b = p_B + silver;
+
+    // Normalize back
+    float newLuma = luma_709(r, g, b);
+    if (newLuma > 0.0f) {
+        float scale = (luma + silver * 0.5f) / newLuma;
+        r *= scale;
+        g *= scale;
+        b *= scale;
+    }
+
+    // Desaturate
+    newLuma = luma_709(r, g, b);
+    r = _mix(r, newLuma, p_Desat * p_Amount);
+    g = _mix(g, newLuma, p_Desat * p_Amount);
+    b = _mix(b, newLuma, p_Desat * p_Amount);
+
+    // Contrast boost via simple power curve
+    float contrast = 1.0f + p_Contrast * p_Amount;
+    r = _powf(_fmaxf(0.0f, r), contrast);
+    g = _powf(_fmaxf(0.0f, g), contrast);
+    b = _powf(_fmaxf(0.0f, b), contrast);
+
+    out.x = _fmaxf(0.0f, _fminf(1.0f, r));
+    out.y = _fmaxf(0.0f, _fminf(1.0f, g));
+    out.z = _fmaxf(0.0f, _fminf(1.0f, b));
+
+    return out;
+}

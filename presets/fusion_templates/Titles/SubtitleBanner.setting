@@ -1,0 +1,66 @@
+{
+    Tools = ordered() {
+        SubtitleBanner = MacroOperator {
+            Inputs = ordered() {
+                MainInput1 = InstanceInput { SourceOp = "Text1", Source = "StyledText", Name = "Subtitle", Default = "Your subtitle line goes here" },
+                MainInput2 = InstanceInput { SourceOp = "Text1", Source = "Font", Name = "Font", Default = "Open Sans" },
+            },
+            Outputs = {
+                MainOutput1 = InstanceOutput { SourceOp = "FinalMerge", Source = "Output" },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                EmptyBG = Background {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        ["TopLeftAlpha"] = Input { Value = 0 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+                },
+                BannerBG = Background {
+                    Inputs = {
+                        Width = Input { Value = 1160 },
+                        Height = Input { Value = 120 },
+                        TopLeftRed = Input { Value = 0.04 },
+                        TopLeftGreen = Input { Value = 0.04 },
+                        TopLeftBlue = Input { Value = 0.04 },
+                        TopLeftAlpha = Input { Value = 0.82 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, -80 } },
+                },
+                Text1 = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        StyledText = Input { Value = "Your subtitle line goes here" },
+                        Font = Input { Value = "Open Sans" },
+                        Style = Input { Value = "SemiBold" },
+                        Size = Input { Value = 0.05 },
+                        Center = Input { Value = { 0.5, 0.12 } },
+                        Red1 = Input { Value = 1 },
+                        Green1 = Input { Value = 1 },
+                        Blue1 = Input { Value = 1 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 40 } },
+                },
+                MergeBanner = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "EmptyBG", Source = "Output" },
+                        Foreground = Input { SourceOp = "BannerBG", Source = "Output" },
+                        Center = Input { Value = { 0.5, 0.12 } },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 440, -40 } },
+                },
+                FinalMerge = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "MergeBanner", Source = "Output" },
+                        Foreground = Input { SourceOp = "Text1", Source = "Output" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 660, -40 } },
+                },
+            },
+        },
+    },
+    ActiveTool = "SubtitleBanner",
+}

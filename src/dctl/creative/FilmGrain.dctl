@@ -1,0 +1,66 @@
+// Film Grain — Photographic grain simulation
+// ResolveAIO DCTL Library
+// Adds organic film grain that responds to image luminance.
+// Grain is finer in highlights and coarser in shadows (like real film).
+
+DEFINE_UI_PARAMS(p_Amount, Grain Amount, DCTLUI_SLIDER_FLOAT, 0.03, 0.0, 0.15, 0.001)
+DEFINE_UI_PARAMS(p_Size, Grain Size, DCTLUI_SLIDER_FLOAT, 1.0, 0.5, 3.0, 0.1)
+DEFINE_UI_PARAMS(p_LumaResponse, Luma Response, DCTLUI_SLIDER_FLOAT, 0.5, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_ChromaAmount, Chroma Grain, DCTLUI_SLIDER_FLOAT, 0.3, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_Seed, Random Seed, DCTLUI_SLIDER_INT, 1, 1, 100, 1)
+
+// Simple hash function for pseudo-random noise
+__DEVICE__ float hash(float x, float y, float seed) {
+    float h = x * 127.1f + y * 311.7f + seed * 758.5f;
+    h = _sinf(h) * 43758.5453f;
+    return h - _floor(h);
+}
+
+__DEVICE__ float grain_noise(float x, float y, float size, float seed) {
+    float sx = x / size;
+    float sy = y / size;
+    float ix = _floor(sx);
+    float iy = _floor(sy);
+    float fx = sx - ix;
+    float fy = sy - iy;
+
+    // Bilinear interpolation of random values
+    float a = hash(ix, iy, seed);
+    float b = hash(ix + 1.0f, iy, seed);
+    float c = hash(ix, iy + 1.0f, seed);
+    float d = hash(ix + 1.0f, iy + 1.0f, seed);
+
+    float ab = _mix(a, b, fx);
+    float cd = _mix(c, d, fx);
+    return _mix(ab, cd, fy) * 2.0f - 1.0f;  // Range: -1 to 1
+}
+
+__DEVICE__ float luma_709(float r, float g, float b) {
+    return 0.2126f * r + 0.7152f * g + 0.0722f * b;
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B) {
+    float3 out;
+    float seed = (float)p_Seed;
+
+    // Luminance-dependent grain strength
+    float luma = luma_709(p_R, p_G, p_B);
+    float lumaFactor = _mix(1.0f, 1.0f - luma, p_LumaResponse);
+
+    float x = (float)p_X;
+    float y = (float)p_Y;
+
+    // Luma grain (same for all channels)
+    float lumaGrain = grain_noise(x, y, p_Size, seed) * p_Amount * lumaFactor;
+
+    // Chroma grain (different per channel)
+    float chromaR = grain_noise(x, y, p_Size * 1.2f, seed + 100.0f) * p_Amount * p_ChromaAmount * lumaFactor;
+    float chromaG = grain_noise(x, y, p_Size * 1.1f, seed + 200.0f) * p_Amount * p_ChromaAmount * lumaFactor;
+    float chromaB = grain_noise(x, y, p_Size * 1.3f, seed + 300.0f) * p_Amount * p_ChromaAmount * lumaFactor;
+
+    out.x = p_R + lumaGrain + chromaR;
+    out.y = p_G + lumaGrain + chromaG;
+    out.z = p_B + lumaGrain + chromaB;
+
+    return out;
+}

@@ -1,0 +1,33 @@
+// Signal Limiter — Clamps RGB signal to a defined range
+// ResolveAIO DCTL Library
+// Essential for broadcast delivery — ensures signal stays within legal levels.
+
+DEFINE_UI_PARAMS(p_Min, Minimum, DCTLUI_SLIDER_FLOAT, 0.0, -0.1, 0.5, 0.001)
+DEFINE_UI_PARAMS(p_Max, Maximum, DCTLUI_SLIDER_FLOAT, 1.0, 0.5, 1.1, 0.001)
+DEFINE_UI_PARAMS(p_SoftClip, Soft Clip, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 0.1, 0.001)
+
+__DEVICE__ float soft_clamp(float x, float lo, float hi, float soft) {
+    if (soft <= 0.0f) {
+        return _fmaxf(lo, _fminf(hi, x));
+    }
+    // Soft roll-off near boundaries
+    if (x < lo + soft) {
+        float t = (x - lo) / soft;
+        t = _fmaxf(0.0f, t);
+        return lo + soft * t * t * 0.5f;
+    }
+    if (x > hi - soft) {
+        float t = (hi - x) / soft;
+        t = _fmaxf(0.0f, t);
+        return hi - soft * t * t * 0.5f;
+    }
+    return x;
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B) {
+    float3 out;
+    out.x = soft_clamp(p_R, p_Min, p_Max, p_SoftClip);
+    out.y = soft_clamp(p_G, p_Min, p_Max, p_SoftClip);
+    out.z = soft_clamp(p_B, p_Min, p_Max, p_SoftClip);
+    return out;
+}

@@ -1,0 +1,116 @@
+{
+    Tools = ordered() {
+        PromoSlug = MacroOperator {
+            Inputs = ordered() {
+                MainInput1 = InstanceInput {
+                    SourceOp = "TitleText",
+                    Source = "StyledText",
+                    Name = "Title",
+                    Default = "Sound Design Pack",
+                },
+                MainInput2 = InstanceInput {
+                    SourceOp = "SubtitleText",
+                    Source = "StyledText",
+                    Name = "Subtitle",
+                    Default = "12 layered hits included",
+                },
+            },
+            Outputs = {
+                MainOutput1 = InstanceOutput {
+                    SourceOp = "SlideTransform",
+                    Source = "Output",
+                },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                Canvas = Background {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        ["TopLeftAlpha"] = Input { Value = 0 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+                },
+                PanelBG = Background {
+                    Inputs = {
+                        Width = Input { Value = 900 },
+                        Height = Input { Value = 210 },
+                        TopLeftRed = Input { Value = 0.06 },
+                        TopLeftGreen = Input { Value = 0.08 },
+                        TopLeftBlue = Input { Value = 0.1 },
+                        ["TopLeftAlpha"] = Input { Value = 0.88 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 120 } },
+                },
+                TitleText = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        StyledText = Input { Value = "Sound Design Pack" },
+                        Font = Input { Value = "Open Sans" },
+                        Style = Input { Value = "Bold" },
+                        Size = Input { Value = 0.055 },
+                        Center = Input { Value = { 0.26, 0.55 } },
+                        HorizontalJustificationNew = Input { Value = 0 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 0 } },
+                },
+                SubtitleText = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        StyledText = Input { Value = "12 layered hits included" },
+                        Font = Input { Value = "JetBrains Mono" },
+                        Style = Input { Value = "Regular" },
+                        Size = Input { Value = 0.028 },
+                        Center = Input { Value = { 0.26, 0.48 } },
+                        HorizontalJustificationNew = Input { Value = 0 },
+                        Red1 = Input { Value = 0.79 },
+                        Green1 = Input { Value = 0.84 },
+                        Blue1 = Input { Value = 0.9 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 60 } },
+                },
+                MergeTitle = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "Canvas", Source = "Output" },
+                        Foreground = Input { SourceOp = "TitleText", Source = "Output" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 440, 0 } },
+                },
+                MergeSubtitle = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "MergeTitle", Source = "Output" },
+                        Foreground = Input { SourceOp = "SubtitleText", Source = "Output" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 660, 0 } },
+                },
+                MergePanel = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "MergeSubtitle", Source = "Output" },
+                        Foreground = Input { SourceOp = "PanelBG", Source = "Output" },
+                        Center = Input { Value = { 0.26, 0.52 } },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 880, 0 } },
+                },
+                SlideTransform = Transform {
+                    Inputs = {
+                        Center = Input {
+                            Value = { 0.26, 0.52 },
+                            Expression = "Point(-0.12 + 0.38 * Blend, 0.52)",
+                        },
+                        Blend = Input { SourceOp = "SlideAnim", Source = "Value" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 1100, 0 } },
+                },
+                SlideAnim = BezierSpline {
+                    KeyFrames = {
+                        [0] = { 0, RH = { 10, 0.33 }, Flags = { Linear = true } },
+                        [18] = { 1, LH = { 10, 0.67 }, Flags = { Linear = true } },
+                    },
+                },
+            },
+        },
+    },
+    ActiveTool = "PromoSlug",
+}

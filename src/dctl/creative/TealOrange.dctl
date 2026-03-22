@@ -1,0 +1,63 @@
+// Teal & Orange — The classic Hollywood color contrast look
+// ResolveAIO DCTL Library
+// Pushes shadows toward teal/cyan and highlights toward warm orange,
+// with skin tone protection to keep faces natural.
+
+DEFINE_UI_PARAMS(p_Amount, Amount, DCTLUI_SLIDER_FLOAT, 0.5, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_ShadowTeal, Shadow Teal, DCTLUI_SLIDER_FLOAT, 0.6, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_HighlightWarm, Highlight Warmth, DCTLUI_SLIDER_FLOAT, 0.4, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_SkinProtect, Skin Protection, DCTLUI_SLIDER_FLOAT, 0.7, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_Saturation, Saturation Boost, DCTLUI_SLIDER_FLOAT, 1.1, 0.5, 2.0, 0.01)
+
+__DEVICE__ float luma_709(float r, float g, float b) {
+    return 0.2126f * r + 0.7152f * g + 0.0722f * b;
+}
+
+__DEVICE__ void rgb_to_hsl(float r, float g, float b, float* h, float* s, float* l) {
+    float maxC = _fmaxf(r, _fmaxf(g, b));
+    float minC = _fminf(r, _fminf(g, b));
+    float delta = maxC - minC;
+    *l = (maxC + minC) * 0.5f;
+    if (delta < 0.0001f) { *h = 0.0f; *s = 0.0f; return; }
+    *s = (*l > 0.5f) ? delta / (2.0f - maxC - minC) : delta / (maxC + minC);
+    if (maxC == r) *h = (g - b) / delta + (g < b ? 6.0f : 0.0f);
+    else if (maxC == g) *h = (b - r) / delta + 2.0f;
+    else *h = (r - g) / delta + 4.0f;
+    *h *= 60.0f;
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B) {
+    float luma = luma_709(p_R, p_G, p_B);
+    float3 out;
+
+    // Determine shadow/highlight blend
+    float shadowMask = 1.0f - luma;  // Stronger in shadows
+    float highlightMask = luma;       // Stronger in highlights
+
+    // Skin tone detection
+    float h, s, l;
+    rgb_to_hsl(p_R, p_G, p_B, &h, &s, &l);
+    float isSkin = 0.0f;
+    if (h > 10.0f && h < 45.0f && s > 0.1f && s < 0.7f && l > 0.15f && l < 0.85f) {
+        isSkin = 1.0f;
+    }
+    float skinFactor = 1.0f - (isSkin * p_SkinProtect);
+
+    // Apply teal to shadows
+    float tealR = p_R - 0.05f * p_ShadowTeal * shadowMask * p_Amount * skinFactor;
+    float tealG = p_G + 0.02f * p_ShadowTeal * shadowMask * p_Amount * skinFactor;
+    float tealB = p_B + 0.08f * p_ShadowTeal * shadowMask * p_Amount * skinFactor;
+
+    // Apply warmth to highlights
+    float warmR = tealR + 0.06f * p_HighlightWarm * highlightMask * p_Amount;
+    float warmG = tealG + 0.02f * p_HighlightWarm * highlightMask * p_Amount;
+    float warmB = tealB - 0.04f * p_HighlightWarm * highlightMask * p_Amount;
+
+    // Saturation boost
+    float newLuma = luma_709(warmR, warmG, warmB);
+    out.x = newLuma + (warmR - newLuma) * p_Saturation;
+    out.y = newLuma + (warmG - newLuma) * p_Saturation;
+    out.z = newLuma + (warmB - newLuma) * p_Saturation;
+
+    return out;
+}

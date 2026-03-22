@@ -1,0 +1,112 @@
+{
+    Tools = ordered() {
+        SplitTitle = MacroOperator {
+            Inputs = ordered() {
+                MainInput1 = InstanceInput {
+                    SourceOp = "LeftText",
+                    Source = "StyledText",
+                    Name = "Left Title",
+                    Default = "COLOR",
+                },
+                MainInput2 = InstanceInput {
+                    SourceOp = "RightText",
+                    Source = "StyledText",
+                    Name = "Right Title",
+                    Default = "SCIENCE",
+                },
+            },
+            Outputs = {
+                MainOutput1 = InstanceOutput {
+                    SourceOp = "GroupTransform",
+                    Source = "Output",
+                },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                Canvas = Background {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        ["TopLeftAlpha"] = Input { Value = 0 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+                },
+                LeftText = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        StyledText = Input { Value = "COLOR" },
+                        Font = Input { Value = "Open Sans" },
+                        Style = Input { Value = "Bold" },
+                        Size = Input { Value = 0.08 },
+                        Center = Input { Value = { 0.41, 0.5 } },
+                        HorizontalJustificationNew = Input { Value = 2 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, -40 } },
+                },
+                RightText = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        StyledText = Input { Value = "SCIENCE" },
+                        Font = Input { Value = "JetBrains Mono" },
+                        Style = Input { Value = "Bold" },
+                        Size = Input { Value = 0.05 },
+                        Center = Input { Value = { 0.59, 0.5 } },
+                        HorizontalJustificationNew = Input { Value = 0 },
+                        Red1 = Input { Value = 0.75 },
+                        Green1 = Input { Value = 0.86 },
+                        Blue1 = Input { Value = 0.94 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 40 } },
+                },
+                Divider = Background {
+                    Inputs = {
+                        Width = Input { Value = 5 },
+                        Height = Input { Value = 160 },
+                        TopLeftRed = Input { Value = 0.2 },
+                        TopLeftGreen = Input { Value = 0.84 },
+                        TopLeftBlue = Input { Value = 0.94 },
+                        ["TopLeftAlpha"] = Input { Value = 0.95 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 120 } },
+                },
+                MergeLeft = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "Canvas", Source = "Output" },
+                        Foreground = Input { SourceOp = "LeftText", Source = "Output" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 440, -20 } },
+                },
+                MergeRight = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "MergeLeft", Source = "Output" },
+                        Foreground = Input { SourceOp = "RightText", Source = "Output" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 660, 0 } },
+                },
+                MergeDivider = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "MergeRight", Source = "Output" },
+                        Foreground = Input { SourceOp = "Divider", Source = "Output" },
+                        Center = Input { Value = { 0.5, 0.5 } },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 880, 0 } },
+                },
+                GroupTransform = Transform {
+                    Inputs = {
+                        Blend = Input { SourceOp = "FadeAnim", Source = "Value" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 1100, 0 } },
+                },
+                FadeAnim = BezierSpline {
+                    KeyFrames = {
+                        [0] = { 0, RH = { 10, 0.33 }, Flags = { Linear = true } },
+                        [18] = { 1, LH = { 10, 0.67 }, Flags = { Linear = true } },
+                    },
+                },
+            },
+        },
+    },
+    ActiveTool = "SplitTitle",
+}

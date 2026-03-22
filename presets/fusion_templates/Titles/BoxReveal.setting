@@ -1,0 +1,112 @@
+{
+    Tools = ordered() {
+        BoxReveal = MacroOperator {
+            Inputs = ordered() {
+                MainInput1 = InstanceInput {
+                    SourceOp = "TitleText",
+                    Source = "StyledText",
+                    Name = "Text",
+                    Default = "Launch Sequence",
+                },
+                MainInput2 = InstanceInput {
+                    SourceOp = "TitleText",
+                    Source = "Size",
+                    Name = "Font Size",
+                    Default = 0.075,
+                },
+                MainInput3 = InstanceInput {
+                    SourceOp = "PlateBG",
+                    Source = "TopLeftRed",
+                    Name = "Plate Color R",
+                    Default = 0.08,
+                },
+                MainInput4 = InstanceInput {
+                    SourceOp = "PlateBG",
+                    Source = "TopLeftGreen",
+                    Name = "Plate Color G",
+                    Default = 0.09,
+                },
+                MainInput5 = InstanceInput {
+                    SourceOp = "PlateBG",
+                    Source = "TopLeftBlue",
+                    Name = "Plate Color B",
+                    Default = 0.12,
+                },
+            },
+            Outputs = {
+                MainOutput1 = InstanceOutput {
+                    SourceOp = "GroupTransform",
+                    Source = "Output",
+                },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                Canvas = Background {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        ["TopLeftAlpha"] = Input { Value = 0 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+                },
+                PlateBG = Background {
+                    Inputs = {
+                        Width = Input { Value = 920 },
+                        Height = Input { Value = 160 },
+                        TopLeftRed = Input { Value = 0.08 },
+                        TopLeftGreen = Input { Value = 0.09 },
+                        TopLeftBlue = Input { Value = 0.12 },
+                        ["TopLeftAlpha"] = Input { Value = 0.82 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 120 } },
+                },
+                TitleText = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        StyledText = Input { Value = "Launch Sequence" },
+                        Font = Input { Value = "Open Sans" },
+                        Style = Input { Value = "Bold" },
+                        Size = Input { Value = 0.075 },
+                        Red1 = Input { Value = 1 },
+                        Green1 = Input { Value = 1 },
+                        Blue1 = Input { Value = 1 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 0 } },
+                },
+                MergeText = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "Canvas", Source = "Output" },
+                        Foreground = Input { SourceOp = "TitleText", Source = "Output" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 440, 0 } },
+                },
+                MergePlate = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "MergeText", Source = "Output" },
+                        Foreground = Input { SourceOp = "PlateBG", Source = "Output" },
+                        Center = Input { Value = { 0.5, 0.5 } },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 660, 0 } },
+                },
+                GroupTransform = Transform {
+                    Inputs = {
+                        Center = Input {
+                            Value = { 0.5, 0.5 },
+                            Expression = "Point(0.5, 0.58 - 0.08 * Blend)",
+                        },
+                        Blend = Input { SourceOp = "RevealAnim", Source = "Value" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 880, 0 } },
+                },
+                RevealAnim = BezierSpline {
+                    KeyFrames = {
+                        [0] = { 0, RH = { 8, 0.33 }, Flags = { Linear = true } },
+                        [18] = { 1, LH = { 10, 0.67 }, Flags = { Linear = true } },
+                    },
+                },
+            },
+        },
+    },
+    ActiveTool = "BoxReveal",
+}

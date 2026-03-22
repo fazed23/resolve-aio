@@ -1,0 +1,36 @@
+// Gray Chart — Generates a stepped grayscale ramp for calibration
+// ResolveAIO DCTL Library
+// Shows 11 steps from 0% to 100% with middle gray (18%) highlighted.
+
+DEFINE_UI_PARAMS(p_Steps, Steps, DCTLUI_SLIDER_INT, 11, 2, 32, 1)
+DEFINE_UI_PARAMS(p_PeakNits, Peak Nits, DCTLUI_SLIDER_FLOAT, 100.0, 100.0, 10000.0, 100.0)
+DEFINE_UI_PARAMS(p_ShowLabels, Show 18% Marker, DCTLUI_CHECK_BOX, 1)
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B) {
+    float3 out;
+
+    int step = (int)((float)p_X / (float)p_Width * (float)p_Steps);
+    float val = (float)step / (float)(p_Steps - 1);
+
+    // Scale for HDR peak
+    val = val * (p_PeakNits / 100.0f);
+
+    // Highlight 18% gray step with green tint
+    if (p_ShowLabels == 1) {
+        float target_step = 0.18f * (float)(p_Steps - 1);
+        if (step == (int)(target_step + 0.5f)) {
+            // Thin green line at the top of the 18% patch
+            if (p_Y < p_Height / 20) {
+                out.x = 0.0f;
+                out.y = val + 0.2f;
+                out.z = 0.0f;
+                return out;
+            }
+        }
+    }
+
+    out.x = val;
+    out.y = val;
+    out.z = val;
+    return out;
+}

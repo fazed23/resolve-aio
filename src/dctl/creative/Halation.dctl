@@ -1,0 +1,43 @@
+// Halation — Film halation glow effect
+// ResolveAIO DCTL Library
+// Simulates light bleeding through the film base and bouncing back,
+// creating a warm red/orange glow around bright areas.
+// This is a per-pixel approximation (true halation needs a blur pass).
+
+DEFINE_UI_PARAMS(p_Threshold, Brightness Threshold, DCTLUI_SLIDER_FLOAT, 0.7, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_Amount, Halation Amount, DCTLUI_SLIDER_FLOAT, 0.15, 0.0, 0.5, 0.01)
+DEFINE_UI_PARAMS(p_HueR, Glow Red, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_HueG, Glow Green, DCTLUI_SLIDER_FLOAT, 0.3, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_HueB, Glow Blue, DCTLUI_SLIDER_FLOAT, 0.1, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_Softness, Edge Softness, DCTLUI_SLIDER_FLOAT, 0.2, 0.01, 0.5, 0.01)
+
+__DEVICE__ float luma_709(float r, float g, float b) {
+    return 0.2126f * r + 0.7152f * g + 0.0722f * b;
+}
+
+__DEVICE__ float smoothstep_custom(float edge0, float edge1, float x) {
+    float t = (x - edge0) / (edge1 - edge0);
+    t = _fmaxf(0.0f, _fminf(1.0f, t));
+    return t * t * (3.0f - 2.0f * t);
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B) {
+    float3 out;
+    float luma = luma_709(p_R, p_G, p_B);
+
+    // Calculate halation mask based on brightness threshold
+    float mask = smoothstep_custom(p_Threshold - p_Softness, p_Threshold + p_Softness, luma);
+
+    // Apply colored glow
+    float glow = mask * p_Amount;
+    out.x = p_R + glow * p_HueR;
+    out.y = p_G + glow * p_HueG;
+    out.z = p_B + glow * p_HueB;
+
+    // Soft clamp to avoid harsh clipping
+    out.x = _fminf(out.x, 1.0f + p_Amount);
+    out.y = _fminf(out.y, 1.0f + p_Amount);
+    out.z = _fminf(out.z, 1.0f + p_Amount);
+
+    return out;
+}

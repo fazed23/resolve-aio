@@ -1,0 +1,134 @@
+{
+    Tools = ordered() {
+        NoteCallout = MacroOperator {
+            Inputs = ordered() {
+                MainInput1 = InstanceInput {
+                    SourceOp = "LabelText",
+                    Source = "StyledText",
+                    Name = "Label",
+                    Default = "NOTE",
+                },
+                MainInput2 = InstanceInput {
+                    SourceOp = "MessageText",
+                    Source = "StyledText",
+                    Name = "Message",
+                    Default = "Switch the grade after the first chorus",
+                },
+            },
+            Outputs = {
+                MainOutput1 = InstanceOutput {
+                    SourceOp = "GroupTransform",
+                    Source = "Output",
+                },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                Canvas = Background {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        ["TopLeftAlpha"] = Input { Value = 0 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+                },
+                PanelBG = Background {
+                    Inputs = {
+                        Width = Input { Value = 980 },
+                        Height = Input { Value = 180 },
+                        TopLeftRed = Input { Value = 0.07 },
+                        TopLeftGreen = Input { Value = 0.08 },
+                        TopLeftBlue = Input { Value = 0.11 },
+                        ["TopLeftAlpha"] = Input { Value = 0.9 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 120 } },
+                },
+                LabelBG = Background {
+                    Inputs = {
+                        Width = Input { Value = 210 },
+                        Height = Input { Value = 52 },
+                        TopLeftRed = Input { Value = 0.97 },
+                        TopLeftGreen = Input { Value = 0.72 },
+                        TopLeftBlue = Input { Value = 0.24 },
+                        ["TopLeftAlpha"] = Input { Value = 1 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 200 } },
+                },
+                LabelText = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        StyledText = Input { Value = "NOTE" },
+                        Font = Input { Value = "JetBrains Mono" },
+                        Style = Input { Value = "Bold" },
+                        Size = Input { Value = 0.03 },
+                        Center = Input { Value = { 0.26, 0.58 } },
+                        Red1 = Input { Value = 0.06 },
+                        Green1 = Input { Value = 0.06 },
+                        Blue1 = Input { Value = 0.06 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, -20 } },
+                },
+                MessageText = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        StyledText = Input { Value = "Switch the grade after the first chorus" },
+                        Font = Input { Value = "Open Sans" },
+                        Style = Input { Value = "Regular" },
+                        Size = Input { Value = 0.04 },
+                        Center = Input { Value = { 0.54, 0.51 } },
+                        HorizontalJustificationNew = Input { Value = 0 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 50 } },
+                },
+                MergeLabelText = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "Canvas", Source = "Output" },
+                        Foreground = Input { SourceOp = "LabelText", Source = "Output" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 440, 0 } },
+                },
+                MergeMessage = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "MergeLabelText", Source = "Output" },
+                        Foreground = Input { SourceOp = "MessageText", Source = "Output" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 660, 0 } },
+                },
+                MergePanel = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "MergeMessage", Source = "Output" },
+                        Foreground = Input { SourceOp = "PanelBG", Source = "Output" },
+                        Center = Input { Value = { 0.5, 0.52 } },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 880, 0 } },
+                },
+                MergeLabelBG = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "MergePanel", Source = "Output" },
+                        Foreground = Input { SourceOp = "LabelBG", Source = "Output" },
+                        Center = Input { Value = { 0.24, 0.58 } },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 1100, 0 } },
+                },
+                GroupTransform = Transform {
+                    Inputs = {
+                        Center = Input {
+                            Value = { 0.5, 0.52 },
+                            Expression = "Point(0.5, 0.44 + 0.08 * Blend)",
+                        },
+                        Blend = Input { SourceOp = "SlideAnim", Source = "Value" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 1320, 0 } },
+                },
+                SlideAnim = BezierSpline {
+                    KeyFrames = {
+                        [0] = { 0, RH = { 10, 0.33 }, Flags = { Linear = true } },
+                        [20] = { 1, LH = { 10, 0.67 }, Flags = { Linear = true } },
+                    },
+                },
+            },
+        },
+    },
+    ActiveTool = "NoteCallout",
+}

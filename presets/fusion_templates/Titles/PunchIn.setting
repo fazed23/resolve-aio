@@ -1,0 +1,78 @@
+{
+    Tools = ordered() {
+        PunchIn = MacroOperator {
+            Inputs = ordered() {
+                MainInput1 = InstanceInput {
+                    SourceOp = "TitleText",
+                    Source = "StyledText",
+                    Name = "Text",
+                    Default = "Big Moment",
+                },
+                MainInput2 = InstanceInput {
+                    SourceOp = "TitleText",
+                    Source = "Size",
+                    Name = "Font Size",
+                    Default = 0.1,
+                },
+            },
+            Outputs = {
+                MainOutput1 = InstanceOutput {
+                    SourceOp = "PunchTransform",
+                    Source = "Output",
+                },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                Canvas = Background {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        ["TopLeftAlpha"] = Input { Value = 0 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+                },
+                TitleText = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        StyledText = Input { Value = "Big Moment" },
+                        Font = Input { Value = "Open Sans" },
+                        Style = Input { Value = "Bold" },
+                        Size = Input { Value = 0.1 },
+                        Red1 = Input { Value = 1 },
+                        Green1 = Input { Value = 0.97 },
+                        Blue1 = Input { Value = 0.92 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 0 } },
+                },
+                Merge1 = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "Canvas", Source = "Output" },
+                        Foreground = Input { SourceOp = "TitleText", Source = "Output" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 440, 0 } },
+                },
+                PunchTransform = Transform {
+                    Inputs = {
+                        Size = Input { SourceOp = "ScaleAnim", Source = "Value" },
+                        Blend = Input { SourceOp = "BlendAnim", Source = "Value" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 660, 0 } },
+                },
+                ScaleAnim = BezierSpline {
+                    KeyFrames = {
+                        [0] = { 1.25, RH = { 6, 1.08 }, Flags = { Linear = true } },
+                        [12] = { 1, LH = { 6, 1.05 }, Flags = { Linear = true } },
+                    },
+                },
+                BlendAnim = BezierSpline {
+                    KeyFrames = {
+                        [0] = { 0, RH = { 4, 0.33 }, Flags = { Linear = true } },
+                        [8] = { 1, LH = { 4, 0.67 }, Flags = { Linear = true } },
+                    },
+                },
+            },
+        },
+    },
+    ActiveTool = "PunchIn",
+}

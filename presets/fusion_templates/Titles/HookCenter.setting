@@ -1,0 +1,54 @@
+{
+    Tools = ordered() {
+        HookCenterTitle = MacroOperator {
+            Inputs = ordered() {
+                MainInput1 = InstanceInput { SourceOp = "Text1", Source = "StyledText", Name = "Text", Default = "STOP THE SCROLL" },
+                MainInput2 = InstanceInput { SourceOp = "Text1", Source = "Font", Name = "Font", Default = "Open Sans" },
+            },
+            Outputs = {
+                MainOutput1 = InstanceOutput { SourceOp = "Merge1", Source = "Output" },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                Background1 = Background {
+                    Inputs = {
+                        Width = Input { Value = 1080 },
+                        Height = Input { Value = 1920 },
+                        ["TopLeftAlpha"] = Input { Value = 0 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+                },
+                Text1 = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1080 },
+                        Height = Input { Value = 1920 },
+                        StyledText = Input { Value = "STOP THE SCROLL" },
+                        Font = Input { Value = "Open Sans" },
+                        Style = Input { Value = "ExtraBold" },
+                        Size = Input { SourceOp = "HookScale", Source = "Value" },
+                        Center = Input { Value = { 0.5, 0.52 } },
+                        Red1 = Input { Value = 1 },
+                        Green1 = Input { Value = 0.92 },
+                        Blue1 = Input { Value = 0.32 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 0 } },
+                },
+                HookScale = BezierSpline {
+                    KeyFrames = {
+                        [0] = { 0.02, RH = { 5, 0.08 }, Flags = { Linear = true } },
+                        [12] = { 0.16, LH = { 6, 0.04 }, RH = { 4, 0.12 } },
+                        [20] = { 0.12, LH = { 6, 0.14 }, Flags = { Linear = true } },
+                    },
+                },
+                Merge1 = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "Background1", Source = "Output" },
+                        Foreground = Input { SourceOp = "Text1", Source = "Output" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 440, 0 } },
+                },
+            },
+        },
+    },
+    ActiveTool = "HookCenterTitle",
+}

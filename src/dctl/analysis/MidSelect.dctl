@@ -1,0 +1,35 @@
+// Mid-Select — Isolates middle gray; everything else goes black
+// ResolveAIO DCTL Library
+// Shows only pixels near 18% reflectance (middle gray). Useful for
+// verifying exposure and matching shots.
+
+DEFINE_UI_PARAMS(p_Target, Target Level, DCTLUI_SLIDER_FLOAT, 0.18, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_Range, Range, DCTLUI_SLIDER_FLOAT, 0.05, 0.001, 0.2, 0.001)
+DEFINE_UI_PARAMS(p_Highlight, Highlight Color, DCTLUI_COMBO_BOX, 0, {Green, White, Original})
+
+__DEVICE__ float luma_709(float r, float g, float b) {
+    return 0.2126f * r + 0.7152f * g + 0.0722f * b;
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B) {
+    float3 out;
+    float luma = luma_709(p_R, p_G, p_B);
+
+    float diff = _fabs(luma - p_Target);
+    if (diff <= p_Range) {
+        if (p_Highlight == 0) {
+            // Green
+            out.x = 0.0f; out.y = 0.7f; out.z = 0.0f;
+        } else if (p_Highlight == 1) {
+            // White
+            out.x = 1.0f; out.y = 1.0f; out.z = 1.0f;
+        } else {
+            // Original
+            out.x = p_R; out.y = p_G; out.z = p_B;
+        }
+    } else {
+        out.x = 0.0f; out.y = 0.0f; out.z = 0.0f;
+    }
+
+    return out;
+}

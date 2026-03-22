@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# ResolveAIO Installer — macOS App Bundle Launcher
+# This script decides whether to launch the GUI or terminal installer.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+APP_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+INSTALLER_DIR="$(dirname "$APP_DIR")"
+PROJECT_DIR="$(dirname "$INSTALLER_DIR")"
+
+# Try GUI installer first (requires Python with tkinter)
+if python3 -c "import tkinter" 2>/dev/null; then
+    cd "$PROJECT_DIR"
+    exec python3 "$INSTALLER_DIR/gui_installer.py"
+else
+    # Fall back to terminal installer
+    exec open -a Terminal "$INSTALLER_DIR/ResolveAIO-Installer.command"
+fi

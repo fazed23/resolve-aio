@@ -1,0 +1,104 @@
+{
+    Tools = ordered() {
+        UnderlineRise = MacroOperator {
+            Inputs = ordered() {
+                MainInput1 = InstanceInput {
+                    SourceOp = "TitleText",
+                    Source = "StyledText",
+                    Name = "Text",
+                    Default = "Watch This Cut",
+                },
+                MainInput2 = InstanceInput {
+                    SourceOp = "UnderlineBG",
+                    Source = "TopLeftRed",
+                    Name = "Underline R",
+                    Default = 0.13,
+                },
+                MainInput3 = InstanceInput {
+                    SourceOp = "UnderlineBG",
+                    Source = "TopLeftGreen",
+                    Name = "Underline G",
+                    Default = 0.76,
+                },
+                MainInput4 = InstanceInput {
+                    SourceOp = "UnderlineBG",
+                    Source = "TopLeftBlue",
+                    Name = "Underline B",
+                    Default = 0.82,
+                },
+            },
+            Outputs = {
+                MainOutput1 = InstanceOutput {
+                    SourceOp = "GroupTransform",
+                    Source = "Output",
+                },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                Canvas = Background {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        ["TopLeftAlpha"] = Input { Value = 0 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+                },
+                TitleText = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        StyledText = Input { Value = "Watch This Cut" },
+                        Font = Input { Value = "Open Sans" },
+                        Style = Input { Value = "Bold" },
+                        Size = Input { Value = 0.07 },
+                        Center = Input { Value = { 0.5, 0.52 } },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, -20 } },
+                },
+                UnderlineBG = Background {
+                    Inputs = {
+                        Width = Input { Value = 560 },
+                        Height = Input { Value = 8 },
+                        TopLeftRed = Input { Value = 0.13 },
+                        TopLeftGreen = Input { Value = 0.76 },
+                        TopLeftBlue = Input { Value = 0.82 },
+                        ["TopLeftAlpha"] = Input { Value = 1 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 80 } },
+                },
+                MergeText = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "Canvas", Source = "Output" },
+                        Foreground = Input { SourceOp = "TitleText", Source = "Output" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 440, 0 } },
+                },
+                MergeUnderline = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "MergeText", Source = "Output" },
+                        Foreground = Input { SourceOp = "UnderlineBG", Source = "Output" },
+                        Center = Input { Value = { 0.5, 0.44 } },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 660, 0 } },
+                },
+                GroupTransform = Transform {
+                    Inputs = {
+                        Center = Input {
+                            Value = { 0.5, 0.5 },
+                            Expression = "Point(0.5, 0.56 - 0.06 * Blend)",
+                        },
+                        Blend = Input { SourceOp = "RiseAnim", Source = "Value" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 880, 0 } },
+                },
+                RiseAnim = BezierSpline {
+                    KeyFrames = {
+                        [0] = { 0, RH = { 10, 0.33 }, Flags = { Linear = true } },
+                        [18] = { 1, LH = { 10, 0.67 }, Flags = { Linear = true } },
+                    },
+                },
+            },
+        },
+    },
+    ActiveTool = "UnderlineRise",
+}

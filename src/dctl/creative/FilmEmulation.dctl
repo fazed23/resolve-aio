@@ -1,0 +1,56 @@
+// Film Emulation — Simple photographic film look
+// ResolveAIO DCTL Library
+// Applies toe/shoulder roll-off, color channel cross-talk, and grain.
+// Approximates the characteristic curve of print film.
+
+DEFINE_UI_PARAMS(p_Toe, Toe Strength, DCTLUI_SLIDER_FLOAT, 0.3, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_Shoulder, Shoulder Strength, DCTLUI_SLIDER_FLOAT, 0.5, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_CrossR, Red Crosstalk, DCTLUI_SLIDER_FLOAT, 0.02, 0.0, 0.1, 0.005)
+DEFINE_UI_PARAMS(p_CrossG, Green Crosstalk, DCTLUI_SLIDER_FLOAT, 0.01, 0.0, 0.1, 0.005)
+DEFINE_UI_PARAMS(p_CrossB, Blue Crosstalk, DCTLUI_SLIDER_FLOAT, 0.03, 0.0, 0.1, 0.005)
+DEFINE_UI_PARAMS(p_Saturation, Saturation, DCTLUI_SLIDER_FLOAT, 0.85, 0.0, 2.0, 0.01)
+
+__DEVICE__ float film_curve(float x, float toe, float shoulder) {
+    // Toe compression (lifts shadows)
+    float t = x;
+    if (t < 0.18f) {
+        float blend = t / 0.18f;
+        t = _mix(t * (1.0f - toe * 0.5f) + toe * 0.02f, t, blend);
+    }
+    // Shoulder roll-off (compresses highlights)
+    if (t > 0.5f) {
+        float overshoot = (t - 0.5f) * 2.0f;
+        t = 0.5f + (1.0f - _expf(-overshoot * (2.0f - shoulder))) * 0.5f * (1.0f / (1.0f - _expf(-(2.0f - shoulder))));
+    }
+    return _fmaxf(0.0f, _fminf(1.0f, t));
+}
+
+__DEVICE__ float luma_709(float r, float g, float b) {
+    return 0.2126f * r + 0.7152f * g + 0.0722f * b;
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B) {
+    // Apply film characteristic curve
+    float r = film_curve(p_R, p_Toe, p_Shoulder);
+    float g = film_curve(p_G, p_Toe, p_Shoulder);
+    float b = film_curve(p_B, p_Toe, p_Shoulder);
+
+    // Channel cross-talk (simulates dye layer interaction)
+    float r2 = r + g * p_CrossG + b * p_CrossB;
+    float g2 = g + r * p_CrossR + b * p_CrossB;
+    float b2 = b + r * p_CrossR + g * p_CrossG;
+
+    // Saturation adjustment
+    float luma = luma_709(r2, g2, b2);
+    float3 out;
+    out.x = luma + (r2 - luma) * p_Saturation;
+    out.y = luma + (g2 - luma) * p_Saturation;
+    out.z = luma + (b2 - luma) * p_Saturation;
+
+    // Clamp output
+    out.x = _fmaxf(0.0f, _fminf(1.0f, out.x));
+    out.y = _fmaxf(0.0f, _fminf(1.0f, out.y));
+    out.z = _fmaxf(0.0f, _fminf(1.0f, out.z));
+
+    return out;
+}

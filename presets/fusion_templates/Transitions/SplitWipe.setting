@@ -1,0 +1,72 @@
+{
+    Tools = ordered() {
+        SplitWipe = MacroOperator {
+            Inputs = ordered() {},
+            Outputs = {
+                MainOutput1 = InstanceOutput {
+                    SourceOp = "MergeRight",
+                    Source = "Output",
+                },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                Canvas = Background {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        ["TopLeftAlpha"] = Input { Value = 0 },
+                    },
+                },
+                LeftPanel = Background {
+                    Inputs = {
+                        Width = Input { Value = 960 },
+                        Height = Input { Value = 1080 },
+                        TopLeftRed = Input { Value = 0.08 },
+                        TopLeftGreen = Input { Value = 0.09 },
+                        TopLeftBlue = Input { Value = 0.11 },
+                        ["TopLeftAlpha"] = Input { Value = 0.88 },
+                    },
+                },
+                RightPanel = Background {
+                    Inputs = {
+                        Width = Input { Value = 960 },
+                        Height = Input { Value = 1080 },
+                        TopLeftRed = Input { Value = 0.08 },
+                        TopLeftGreen = Input { Value = 0.09 },
+                        TopLeftBlue = Input { Value = 0.11 },
+                        ["TopLeftAlpha"] = Input { Value = 0.88 },
+                    },
+                },
+                MergeLeft = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "Canvas", Source = "Output" },
+                        Foreground = Input { SourceOp = "LeftPanel", Source = "Output" },
+                        Center = Input {
+                            Value = { 0.25, 0.5 },
+                            Expression = "Point(-0.25 + 0.5 * Blend, 0.5)",
+                        },
+                        Blend = Input { SourceOp = "SplitAnim", Source = "Value" },
+                    },
+                },
+                MergeRight = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "MergeLeft", Source = "Output" },
+                        Foreground = Input { SourceOp = "RightPanel", Source = "Output" },
+                        Center = Input {
+                            Value = { 0.75, 0.5 },
+                            Expression = "Point(1.25 - 0.5 * Blend, 0.5)",
+                        },
+                        Blend = Input { SourceOp = "SplitAnim", Source = "Value" },
+                    },
+                },
+                SplitAnim = BezierSpline {
+                    KeyFrames = {
+                        [0] = { 0, RH = { 8, 0.33 }, Flags = { Linear = true } },
+                        [18] = { 1, LH = { 8, 0.67 }, Flags = { Linear = true } },
+                    },
+                },
+            },
+        },
+    },
+    ActiveTool = "SplitWipe",
+}

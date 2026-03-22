@@ -1,0 +1,81 @@
+{
+    Tools = ordered() {
+        TypewriterText = MacroOperator {
+            Inputs = ordered() {
+                MainInput1 = InstanceInput {
+                    SourceOp = "Text1",
+                    Source = "StyledText",
+                    Name = "Text",
+                    Default = "Type something here...",
+                },
+                MainInput2 = InstanceInput {
+                    SourceOp = "Text1",
+                    Source = "Size",
+                    Name = "Font Size",
+                    Default = 0.06,
+                },
+                MainInput3 = InstanceInput {
+                    SourceOp = "Text1",
+                    Source = "Font",
+                    Name = "Font",
+                    Default = "JetBrains Mono",
+                },
+                MainInput4 = InstanceInput {
+                    SourceOp = "WriteOnAnim",
+                    Source = "Value",
+                    Name = "Write On Speed",
+                },
+            },
+            Outputs = {
+                MainOutput1 = InstanceOutput {
+                    SourceOp = "Merge1",
+                    Source = "Output",
+                },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                Background1 = Background {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        ["TopLeftAlpha"] = Input { Value = 0 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+                },
+                Text1 = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        StyledText = Input { Value = "Type something here..." },
+                        Font = Input { Value = "JetBrains Mono" },
+                        Style = Input { Value = "Regular" },
+                        Size = Input { Value = 0.06 },
+                        Red1 = Input { Value = 1 },
+                        Green1 = Input { Value = 1 },
+                        Blue1 = Input { Value = 1 },
+                        WriteOn = Input {
+                            SourceOp = "WriteOnAnim",
+                            Source = "Value",
+                        },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 0 } },
+                },
+                WriteOnAnim = BezierSpline {
+                    SplineColor = { Red = 0, Green = 255, Blue = 0 },
+                    KeyFrames = {
+                        [0] = { 0, RH = { 20, 0.33 }, Flags = { Linear = true } },
+                        [60] = { 1, LH = { 40, 0.67 }, Flags = { Linear = true } },
+                    },
+                },
+                Merge1 = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "Background1", Source = "Output" },
+                        Foreground = Input { SourceOp = "Text1", Source = "Output" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 440, 0 } },
+                },
+            },
+        },
+    },
+    ActiveTool = "TypewriterText",
+}

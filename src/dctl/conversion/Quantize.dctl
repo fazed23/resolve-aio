@@ -1,0 +1,18 @@
+// Quantize — Reduces bit depth visually for analysis or creative effect
+// ResolveAIO DCTL Library
+// Posterizes the image to a specified bit depth (1-32 bit).
+
+DEFINE_UI_PARAMS(p_Bits, Bit Depth, DCTLUI_SLIDER_INT, 8, 1, 32, 1)
+
+__DEVICE__ float quantize(float x, int bits) {
+    float levels = _powf(2.0f, (float)bits) - 1.0f;
+    return _round(x * levels) / levels;
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B) {
+    float3 out;
+    out.x = quantize(p_R, p_Bits);
+    out.y = quantize(p_G, p_Bits);
+    out.z = quantize(p_B, p_Bits);
+    return out;
+}

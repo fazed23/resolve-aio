@@ -1,0 +1,60 @@
+{
+    Tools = ordered() {
+        WhipSlide = MacroOperator {
+            Inputs = ordered() {},
+            Outputs = {
+                MainOutput1 = InstanceOutput {
+                    SourceOp = "SlideTransform",
+                    Source = "Output",
+                },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                Canvas = Background {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        TopLeftRed = Input { Value = 0.06 },
+                        TopLeftGreen = Input { Value = 0.07 },
+                        TopLeftBlue = Input { Value = 0.09 },
+                        ["TopLeftAlpha"] = Input { Value = 0.28 },
+                    },
+                },
+                Accent = Background {
+                    Inputs = {
+                        Width = Input { Value = 420 },
+                        Height = Input { Value = 1080 },
+                        TopLeftRed = Input { Value = 0.99 },
+                        TopLeftGreen = Input { Value = 0.74 },
+                        TopLeftBlue = Input { Value = 0.3 },
+                        ["TopLeftAlpha"] = Input { Value = 0.95 },
+                    },
+                },
+                Merge1 = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "Canvas", Source = "Output" },
+                        Foreground = Input { SourceOp = "Accent", Source = "Output" },
+                        Center = Input { Value = { 0.2, 0.5 } },
+                    },
+                },
+                SlideTransform = Transform {
+                    Inputs = {
+                        Center = Input {
+                            Value = { 0.2, 0.5 },
+                            Expression = "Point(-0.1 + 1.2 * Blend, 0.5)",
+                        },
+                        MotionBlur = Input { Value = 1 },
+                        Blend = Input { SourceOp = "SlideAnim", Source = "Value" },
+                    },
+                },
+                SlideAnim = BezierSpline {
+                    KeyFrames = {
+                        [0] = { 0, RH = { 10, 0.33 }, Flags = { Linear = true } },
+                        [18] = { 1, LH = { 10, 0.67 }, Flags = { Linear = true } },
+                    },
+                },
+            },
+        },
+    },
+    ActiveTool = "WhipSlide",
+}

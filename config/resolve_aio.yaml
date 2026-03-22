@@ -1,0 +1,35 @@
+# ResolveAIO Configuration
+# ========================
+
+server:
+  host: "127.0.0.1"
+  port: 9880
+  transport: "stdio"  # "stdio" for Cursor/Claude Desktop, "sse" for web chat
+
+resolve:
+  # Auto-detected on startup; override here if needed
+  # script_lib: "/Library/Application Support/Blackmagic Design/DaVinci Resolve/Developer/Scripting"
+  auto_connect: true
+  retry_interval: 5  # seconds between reconnect attempts
+
+dctl:
+  auto_install: true
+  # Custom LUT directory override (auto-detected by default)
+  # lut_dir: "/Library/Application Support/Blackmagic Design/DaVinci Resolve/LUT"
+
+chat:
+  enabled: true
+  port: 9881
+  # AI provider: "mcp" routes through MCP tools
+  provider: "mcp"
+
+automation:
+  # Default render preset
+  render_preset: "H.264 Master"
+  # Silence detection threshold in dB
+  silence_threshold: -40
+  silence_min_duration: 0.5  # seconds
+
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  file: "resolve_aio.log"

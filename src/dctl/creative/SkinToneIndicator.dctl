@@ -1,0 +1,60 @@
+// Skin Tone Indicator — Highlights skin tones for monitoring
+// ResolveAIO DCTL Library
+// Overlays a color marker on pixels that fall within typical skin tone ranges.
+// Uses hue, saturation, and luminance thresholds for detection.
+
+DEFINE_UI_PARAMS(p_HueCenter, Hue Center, DCTLUI_SLIDER_FLOAT, 25.0, 0.0, 360.0, 1.0)
+DEFINE_UI_PARAMS(p_HueRange, Hue Range, DCTLUI_SLIDER_FLOAT, 20.0, 5.0, 60.0, 1.0)
+DEFINE_UI_PARAMS(p_SatMin, Saturation Min, DCTLUI_SLIDER_FLOAT, 0.1, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_SatMax, Saturation Max, DCTLUI_SLIDER_FLOAT, 0.7, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_LumMin, Luminance Min, DCTLUI_SLIDER_FLOAT, 0.15, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_LumMax, Luminance Max, DCTLUI_SLIDER_FLOAT, 0.85, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_Overlay, Overlay Opacity, DCTLUI_SLIDER_FLOAT, 0.4, 0.0, 1.0, 0.01)
+
+__DEVICE__ void rgb_to_hsl(float r, float g, float b, float* h, float* s, float* l) {
+    float maxC = _fmaxf(r, _fmaxf(g, b));
+    float minC = _fminf(r, _fminf(g, b));
+    float delta = maxC - minC;
+
+    *l = (maxC + minC) * 0.5f;
+
+    if (delta < 0.0001f) {
+        *h = 0.0f;
+        *s = 0.0f;
+        return;
+    }
+
+    *s = (*l > 0.5f) ? delta / (2.0f - maxC - minC) : delta / (maxC + minC);
+
+    if (maxC == r) {
+        *h = (g - b) / delta + (g < b ? 6.0f : 0.0f);
+    } else if (maxC == g) {
+        *h = (b - r) / delta + 2.0f;
+    } else {
+        *h = (r - g) / delta + 4.0f;
+    }
+    *h *= 60.0f;
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B) {
+    float3 out;
+    out.x = p_R;
+    out.y = p_G;
+    out.z = p_B;
+
+    float h, s, l;
+    rgb_to_hsl(p_R, p_G, p_B, &h, &s, &l);
+
+    // Check if within skin tone range
+    float hueDiff = _fabs(h - p_HueCenter);
+    if (hueDiff > 180.0f) hueDiff = 360.0f - hueDiff;
+
+    if (hueDiff <= p_HueRange && s >= p_SatMin && s <= p_SatMax && l >= p_LumMin && l <= p_LumMax) {
+        // Overlay yellow on skin tones
+        out.x = _mix(p_R, 1.0f, p_Overlay);
+        out.y = _mix(p_G, 0.9f, p_Overlay);
+        out.z = _mix(p_B, 0.0f, p_Overlay);
+    }
+
+    return out;
+}

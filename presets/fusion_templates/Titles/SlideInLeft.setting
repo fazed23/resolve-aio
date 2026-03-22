@@ -1,0 +1,63 @@
+{
+    Tools = ordered() {
+        SlideInLeftTitle = MacroOperator {
+            Inputs = ordered() {
+                MainInput1 = InstanceInput { SourceOp = "Text1", Source = "StyledText", Name = "Text", Default = "Slide In Left" },
+                MainInput2 = InstanceInput { SourceOp = "Text1", Source = "Size", Name = "Font Size", Default = 0.07 },
+                MainInput3 = InstanceInput { SourceOp = "Text1", Source = "Font", Name = "Font", Default = "Open Sans" },
+            },
+            Outputs = {
+                MainOutput1 = InstanceOutput { SourceOp = "Merge1", Source = "Output" },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                Background1 = Background {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        ["TopLeftAlpha"] = Input { Value = 0 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 0, 0 } },
+                },
+                Text1 = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        StyledText = Input { Value = "Slide In Left" },
+                        Font = Input { Value = "Open Sans" },
+                        Style = Input { Value = "Bold" },
+                        Size = Input { Value = 0.07 },
+                        Red1 = Input { Value = 1 },
+                        Green1 = Input { Value = 1 },
+                        Blue1 = Input { Value = 1 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, 0 } },
+                },
+                Transform1 = Transform {
+                    Inputs = {
+                        Center = Input {
+                            Value = { 0.5, 0.5 },
+                            Expression = "Point(0.20 + 0.30 * Blend, 0.50)",
+                        },
+                        Blend = Input { SourceOp = "SlideAnim", Source = "Value" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 440, 0 } },
+                },
+                SlideAnim = BezierSpline {
+                    KeyFrames = {
+                        [0] = { 0, RH = { 8, 0.3 }, Flags = { Linear = true } },
+                        [18] = { 1, LH = { 10, 0.7 }, Flags = { Linear = true } },
+                    },
+                },
+                Merge1 = Merge {
+                    Inputs = {
+                        Background = Input { SourceOp = "Background1", Source = "Output" },
+                        Foreground = Input { SourceOp = "Transform1", Source = "Output" },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 660, 0 } },
+                },
+            },
+        },
+    },
+    ActiveTool = "SlideInLeftTitle",
+}

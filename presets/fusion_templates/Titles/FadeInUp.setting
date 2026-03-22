@@ -1,0 +1,99 @@
+{
+    Tools = ordered() {
+        FadeInUpTitle = MacroOperator {
+            Inputs = ordered() {
+                MainInput1 = InstanceInput {
+                    SourceOp = "Text1",
+                    Source = "StyledText",
+                    Name = "Text",
+                    Default = "Your Title Here",
+                },
+                MainInput2 = InstanceInput {
+                    SourceOp = "Text1",
+                    Source = "Size",
+                    Name = "Font Size",
+                    Default = 0.08,
+                },
+                MainInput3 = InstanceInput {
+                    SourceOp = "Text1",
+                    Source = "Font",
+                    Name = "Font",
+                    Default = "Open Sans",
+                },
+                MainInput4 = InstanceInput {
+                    SourceOp = "Transform1",
+                    Source = "Center",
+                    Name = "Position",
+                    Default = { 0.5, 0.5 },
+                },
+            },
+            Outputs = {
+                MainOutput1 = InstanceOutput {
+                    SourceOp = "Merge1",
+                    Source = "Output",
+                },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                Background1 = Background {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        ["TopLeftAlpha"] = Input { Value = 0 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 0, -50 } },
+                },
+                Text1 = TextPlus {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        ["CharacterSpacingCluster.Tracking"] = Input { Value = 1.05 },
+                        StyledText = Input { Value = "Your Title Here" },
+                        Font = Input { Value = "Open Sans" },
+                        Style = Input { Value = "Bold" },
+                        Size = Input { Value = 0.08 },
+                        Red1 = Input { Value = 1 },
+                        Green1 = Input { Value = 1 },
+                        Blue1 = Input { Value = 1 },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 220, -50 } },
+                },
+                Transform1 = Transform {
+                    CtrlWZoom = false,
+                    Inputs = {
+                        Center = Input {
+                            Value = { 0.5, 0.5 },
+                            Expression = "Point(0.5, 0.45 + 0.05 * (1.0 - Blend))",
+                        },
+                        Blend = Input {
+                            SourceOp = "FadeInUpBlend",
+                            Source = "Value",
+                        },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 440, -50 } },
+                },
+                FadeInUpBlend = BezierSpline {
+                    SplineColor = { Red = 255, Green = 0, Blue = 255 },
+                    KeyFrames = {
+                        [0] = { 0, RH = { 10, 0.33 }, Flags = { Linear = true } },
+                        [20] = { 1, LH = { 10, 0.67 }, Flags = { Linear = true } },
+                    },
+                },
+                Merge1 = Merge {
+                    Inputs = {
+                        Background = Input {
+                            SourceOp = "Background1",
+                            Source = "Output",
+                        },
+                        Foreground = Input {
+                            SourceOp = "Transform1",
+                            Source = "Output",
+                        },
+                    },
+                    ViewInfo = OperatorInfo { Pos = { 660, -50 } },
+                },
+            },
+        },
+    },
+    ActiveTool = "FadeInUpTitle",
+}

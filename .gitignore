@@ -1,0 +1,7 @@
+config/resolve_aio.env
+.env
+__pycache__/
+.pytest_cache/
+.claude/
+.DS_Store
+*.zip

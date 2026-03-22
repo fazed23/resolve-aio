@@ -1,0 +1,31 @@
+// Channel Saturation — Per-channel saturation control with threshold
+// ResolveAIO DCTL Library
+// Independent saturation control for R, G, B channels with upper/lower thresholds.
+
+DEFINE_UI_PARAMS(p_SatR, Red Saturation, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 3.0, 0.01)
+DEFINE_UI_PARAMS(p_SatG, Green Saturation, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 3.0, 0.01)
+DEFINE_UI_PARAMS(p_SatB, Blue Saturation, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 3.0, 0.01)
+DEFINE_UI_PARAMS(p_ThreshLow, Lower Threshold, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(p_ThreshHigh, Upper Threshold, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 1.0, 0.01)
+
+__DEVICE__ float luma_709(float r, float g, float b) {
+    return 0.2126f * r + 0.7152f * g + 0.0722f * b;
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B) {
+    float luma = luma_709(p_R, p_G, p_B);
+    float3 out;
+
+    // Only apply saturation within the luma threshold range
+    if (luma >= p_ThreshLow && luma <= p_ThreshHigh) {
+        out.x = luma + (p_R - luma) * p_SatR;
+        out.y = luma + (p_G - luma) * p_SatG;
+        out.z = luma + (p_B - luma) * p_SatB;
+    } else {
+        out.x = p_R;
+        out.y = p_G;
+        out.z = p_B;
+    }
+
+    return out;
+}

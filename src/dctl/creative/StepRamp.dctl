@@ -1,0 +1,25 @@
+// Step Ramp — Linear ramp generator for LUT/monitor testing
+// ResolveAIO DCTL Library
+// Generates a smooth or stepped horizontal gradient from black to white.
+
+DEFINE_UI_PARAMS(p_Steps, Steps (0=smooth), DCTLUI_SLIDER_INT, 0, 0, 64, 1)
+DEFINE_UI_PARAMS(p_Gamma, Gamma, DCTLUI_SLIDER_FLOAT, 1.0, 0.1, 4.0, 0.01)
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B) {
+    float3 out;
+    float val = (float)p_X / (float)(p_Width - 1);
+
+    // Apply stepping
+    if (p_Steps > 0) {
+        val = _floor(val * (float)p_Steps) / (float)(p_Steps - 1 > 0 ? p_Steps - 1 : 1);
+        val = _fminf(val, 1.0f);
+    }
+
+    // Apply gamma
+    val = _powf(val, p_Gamma);
+
+    out.x = val;
+    out.y = val;
+    out.z = val;
+    return out;
+}

@@ -1,0 +1,48 @@
+{
+    Tools = ordered() {
+        ZoomBlur = MacroOperator {
+            Inputs = ordered() {},
+            Outputs = {
+                MainOutput1 = InstanceOutput {
+                    SourceOp = "BlurTransform",
+                    Source = "Output",
+                },
+            },
+            ViewInfo = GroupInfo { Pos = { 0, 0 } },
+            Tools = ordered() {
+                Canvas = Background {
+                    Inputs = {
+                        Width = Input { Value = 1920 },
+                        Height = Input { Value = 1080 },
+                        TopLeftRed = Input { Value = 0.1 },
+                        TopLeftGreen = Input { Value = 0.11 },
+                        TopLeftBlue = Input { Value = 0.14 },
+                        ["TopLeftAlpha"] = Input { Value = 0.32 },
+                    },
+                },
+                BlurTransform = Transform {
+                    Inputs = {
+                        Size = Input { SourceOp = "ZoomAnim", Source = "Value" },
+                        MotionBlur = Input { Value = 1 },
+                        Blend = Input { SourceOp = "BlendAnim", Source = "Value" },
+                    },
+                },
+                ZoomAnim = BezierSpline {
+                    KeyFrames = {
+                        [0] = { 1.25, RH = { 8, 1.12 }, Flags = { Linear = true } },
+                        [12] = { 0.92, LH = { 6, 1.0 }, RH = { 6, 0.96 }, Flags = { Linear = true } },
+                        [24] = { 1.25, LH = { 8, 1.12 }, Flags = { Linear = true } },
+                    },
+                },
+                BlendAnim = BezierSpline {
+                    KeyFrames = {
+                        [0] = { 0, RH = { 6, 0.33 }, Flags = { Linear = true } },
+                        [10] = { 1, LH = { 5, 0.67 }, RH = { 5, 0.67 }, Flags = { Linear = true } },
+                        [20] = { 0, LH = { 6, 0.33 }, Flags = { Linear = true } },
+                    },
+                },
+            },
+        },
+    },
+    ActiveTool = "ZoomBlur",
+}
